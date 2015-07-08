@@ -1,0 +1,99 @@
+<ion-view view-title="{{title}}">
+  <ion-header-bar align-title="center" class="bar-light">
+    <div class="buttons" ng-show="canGoBack();">
+      <button class="button button-clear button-dark" ng-click="goBack();"><i class="ion-ios-arrow-back"></i> Back</button>
+    </div>
+    <div class="buttons" ng-show="onPosts();">
+      <button class="button button-clear button-dark" ng-click="goToSlide(0);"><i class="ion-settings"></i></button>
+    </div>
+    <h1 class="title"><img ng-click="showMenu()" src="img/voat-logo.png"></img></h1>
+    <div class="buttons" ng-show="inSettings();">
+      <button class="button button-clear button-dark" ng-click="goToSlide(1);">Voat <i class="ion-ios-arrow-forward"></i></button>
+    </div>
+  </ion-header-bar>
+  <ion-content class="padding">
+    <ion-slide-box show-pager="false" on-slide-changed="manageSlides($index)">
+      <ion-slide>
+        <ion-list>
+          <ion-item class="item-remove-animate item-text-wrap item-text-left">
+            <h2><i class="ion-ios-person"></i> Account</h2>
+          </ion-item>
+          <div class="item item-divider"></div>
+          <ion-item ng-repeat="subverse in subverses" ng-click="getVPosts(subverse)" class="item-remove-animate item-text-wrap item-text-left">
+            <h2><i class="ion-bookmark"></i> {{ subverse }}</h2>
+          </ion-item>
+        </ion-list>
+      </ion-slide>
+      <ion-slide>
+        <ion-list>
+          <ion-item ng-show="onPosts();" ng-repeat="post in posts" class="item-remove-animate item-text-wrap item-avatar item-icon-right">
+              <img ng-click="goto(post);" ng-src="http://192.168.0.5:5000/Thumbs/{{post.Thumbnail}}check/{{isUrl(post.MessageContent)}}">
+              <div ng-click="focus_on(post);">
+                <div ng-switch on="post.Title">
+                  <div ng-switch-when="null">
+                    <h2>{{post.Linkdescription}} <i style="font-size: 12px; color: #666;">(self.{{post.Subverse}})</i></h2>
+                  </div>
+                  <div ng-switch-when="undefined">
+                    <h2>{{post.Linkdescription}} <i style="font-size: 12px; color: #666;">(self.{{post.Subverse}})</i></h2>
+                  </div>
+                  <div ng-switch-default>
+                    <h2>{{post.Title}} <i style="font-size: 12px; color: #666;">(self.{{post.Subverse}})</i></h2>
+                  </div>
+                </div>
+                <p>submitted {{timeDiff(post.Date)}}
+                   by <b>{{post.Name}}</b>
+                   to <b>{{post.Subverse}}</b>
+                   (<b style="color: #4aabe7;">+{{post.Likes}}</b>|<b style="color: #8870ff;">-{{post.Dislikes}}</b>)</p>
+                <b>{{post.CommentCount}} comments</b>
+              </div>
+          </ion-item>
+        </ion-list>
+      </ion-slide>
+      <ion-slide>
+        <div class="card">
+          <div class="item item-avatar item-text-wrap">
+            <img ng-src="http://192.168.0.5:5000/Thumbs/{{focused_post.Thumbnail}}check/{{isUrl(focused_post.MessageContent)}}">
+            <div ng-switch on="focused_post.Title">
+              <div ng-switch-when="null">
+                <h2>{{focused_post.Linkdescription}} <i style="font-size: 12px; color: #666;">(self.{{focused_post.Subverse}})</i></h2>
+              </div>
+              <div ng-switch-when="undefined">
+                <h2>{{focused_post.Linkdescription}} <i style="font-size: 12px; color: #666;">(self.{{focused_post.Subverse}})</i></h2>
+              </div>
+              <div ng-switch-default>
+                <h2>{{focused_post.Title}} <i style="font-size: 12px; color: #666;">(self.{{focused_post.Subverse}})</i></h2>
+              </div>
+            </div>
+            <p>submitted {{timeDiff(focused_post.Date)}}
+               by <a href="">{{focused_post.Name}}</a>
+               to <b>{{focused_post.Subverse}}</b>
+               (<b style="color: #4aabe7;">+{{focused_post.Likes}}</b>|<b style="color: #8870ff;">-{{focused_post.Dislikes}}</b>)</p>
+            <b>{{focused_post.CommentCount}} comments</b>
+          </div>
+          <div class="card">
+            <div class="item item-divider item-text-wrap item-text-left">
+              <p>{{focused_post.MessageContent}}</p>
+            </div>
+          </div>
+          <ion-list>
+            <ion-item ng-repeat="comment in comments" class="item-remove-animate item-text-left item-text-wrap">
+               <p>(<b style="color: #4aabe7;">+{{comment.Likes}}</b>|<b style="color: #8870ff;">-{{comment.Dislikes}}</b>)
+               <a href="">{{comment.Name}}</a> <i>{{timeDiff(comment.Date)}}</i></p>
+              <p>{{comment.CommentContent}}</p>
+            </ion-item>
+          </ion-list>
+        </div>
+      </ion-slide>
+      <ion-slide>
+        <ion-list>
+          <ion-item class="item-remove-animate item-text-wrap item-text-left">
+            <h2><i class="ion-ios-person"></i> {{focused_user.Name}}'s Account</h2>
+          </ion-item>
+          <div class="item item-divider">
+            <p>registered {{timeDiff(focused_user.RegistrationDate)}}</p>
+          </div>
+        </ion-list>
+      </ion-slide>
+    </ion-slide-box>
+  </ion-content>
+</ion-view>
