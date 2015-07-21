@@ -1,98 +1,467 @@
 <ion-view view-title="{{title}}">
-  <ion-header-bar align-title="center" class="bar-light">
-    <div class="buttons" ng-show="canGoBack();">
-      <button class="button button-clear button-dark" ng-click="goBack();"><i class="ion-ios-arrow-back"></i> Back</button>
+  <ion-header-bar no-tap-scroll="true" align-title="center" class="bar-light">
+    <div ng-if="onMyAccount()">
+      <div class="buttons">
+        <button class="button button-clear button-dark" ng-click="goToSettings();"><i class="ion-ios-arrow-back"></i> Back</button>
+      </div>
     </div>
-    <div class="buttons" ng-show="onPosts();">
-      <button class="button button-clear button-dark" ng-click="goToSlide(0);"><i class="ion-settings"></i></button>
+    <div ng-if="onAccount() && !onMyAccount()">
+      <div class="buttons">
+        <button class="button button-clear button-dark" ng-click="goToPost();"><i class="ion-ios-arrow-back"></i> Back</button>
+      </div>
     </div>
+    <div ng-if="onLogin()">
+      <div class="buttons">
+        <button class="button button-clear button-dark" ng-click="goToSettings();"><i class="ion-ios-arrow-back"></i> Back</button>
+      </div>
+    </div>
+    <div ng-if="onPost()">
+      <div class="buttons">
+        <button class="button button-clear button-dark" ng-click="goToPosts();"><i class="ion-ios-arrow-back"></i> Back</button>
+      </div>
+    </div>
+    <div ng-if="onSubmission()">
+      <div class="buttons">
+        <button class="button button-clear button-dark" ng-click="goToPosts();"><i class="ion-ios-arrow-back"></i> Back</button>
+      </div>
+    </div>
+    <div ng-if="onPosts();">
+      <div class="buttons">
+        <button class="button button-clear button-dark" ng-click="goToSettings();"><i class="ion-settings"></i></button>
+      </div>
+    </div>
+    <!--
+    <div ng-if="!onPosts() && !onSettings()">
+      <div class="buttons">
+        <button class="button button-clear button-dark" ng-click="goToPrevious();"><i class="ion-ios-arrow-back"></i> Back</button>
+      </div>
+    </div>
+  -->
     <h1 class="title"><img ng-click="showMenu()" src="img/voat-logo.png"></img></h1>
-    <div class="buttons" ng-show="inSettings();">
-      <button class="button button-clear button-dark" ng-click="goToSlide(1);">Voat <i class="ion-ios-arrow-forward"></i></button>
+    <div class="buttons" ng-show="onSettings() || (onPost() && previousIndex == 3);">
+      <button class="button button-clear button-dark" ng-bind-html="rightButton.text" ng-click="rightButton.clickCallback();"></button>
     </div>
   </ion-header-bar>
+  <div ng-if="onSubmission()">
+    <div class="tabs-striped tabs-top tabs-background-royal tabs-color-light">
+      <div class="tabs">
+        <a ng-click="updateSubmissionsTabs(0)" id="tab_0" class="tab-item active" href="#">
+          <i class="icon ion-link"></i>
+          Link
+        </a>
+        <a ng-click="updateSubmissionTabs(1)" id="tab_1" class="tab-item" href="#">
+          <i class="icon ion-document-text"></i>
+          Self
+        </a>
+      </div>
+    </div>
+  </div>
+  <div ng-if="onAccount()">
+    <div class="tabs-striped tabs-top tabs-background-royal tabs-color-light">
+      <div class="tabs">
+        <a ng-click="updateAccountTabs(0)" id="tab_0" class="tab-item active" href="#">
+          <i class="icon ion-ios-paperplane"></i>
+          Submissions
+        </a>
+        <a ng-click="updateAccountTabs(1)" id="tab_1" class="tab-item" href="#">
+          <i class="icon ion-document-text"></i>
+          Comments
+        </a>
+        <a ng-click="updateAccountTabs(2)" id="tab_2" class="tab-item" href="#">
+          <i class="icon ion-android-star-outline"></i>
+          Saves
+        </a>
+      </div>
+    </div>
+  </div>
   <ion-content class="padding">
-    <ion-slide-box show-pager="false" on-slide-changed="manageSlides($index)">
+    <ion-refresher
+      pulling-text="Pull to refresh..."
+      on-refresh="refresh()">
+    </ion-refresher>
+    <ion-slide-box show-pager="false" on-slide-changed="manageSlides($index)" active-slide="1">
       <ion-slide>
-        <ion-list>
-          <ion-item class="item-remove-animate item-text-wrap item-text-left">
-            <h2><i class="ion-ios-person"></i> Account</h2>
-          </ion-item>
-          <div class="item item-divider"></div>
-          <ion-item ng-repeat="subverse in subverses" ng-click="getVPosts(subverse)" class="item-remove-animate item-text-wrap item-text-left">
-            <h2><i class="ion-bookmark"></i> {{ subverse }}</h2>
-          </ion-item>
-        </ion-list>
-      </ion-slide>
-      <ion-slide>
-        <ion-list>
-          <ion-item ng-show="onPosts();" ng-repeat="post in posts" class="item-remove-animate item-text-wrap item-avatar item-icon-right">
-              <img ng-click="goto(post);" ng-src="http://192.168.0.5:5000/Thumbs/{{post.Thumbnail}}check/{{isUrl(post.MessageContent)}}">
-              <div ng-click="focus_on(post);">
-                <div ng-switch on="post.Title">
-                  <div ng-switch-when="null">
-                    <h2>{{post.Linkdescription}} <i style="font-size: 12px; color: #666;">(self.{{post.Subverse}})</i></h2>
-                  </div>
-                  <div ng-switch-when="undefined">
-                    <h2>{{post.Linkdescription}} <i style="font-size: 12px; color: #666;">(self.{{post.Subverse}})</i></h2>
-                  </div>
-                  <div ng-switch-default>
-                    <h2>{{post.Title}} <i style="font-size: 12px; color: #666;">(self.{{post.Subverse}})</i></h2>
-                  </div>
-                </div>
-                <p>submitted {{timeDiff(post.Date)}}
-                   by <b>{{post.Name}}</b>
-                   to <b>{{post.Subverse}}</b>
-                   (<b style="color: #4aabe7;">+{{post.Likes}}</b>|<b style="color: #8870ff;">-{{post.Dislikes}}</b>)</p>
-                <b>{{post.CommentCount}} comments</b>
-              </div>
-          </ion-item>
-        </ion-list>
-      </ion-slide>
-      <ion-slide>
-        <div class="card">
-          <div class="item item-avatar item-text-wrap">
-            <img ng-src="http://192.168.0.5:5000/Thumbs/{{focused_post.Thumbnail}}check/{{isUrl(focused_post.MessageContent)}}">
-            <div ng-switch on="focused_post.Title">
-              <div ng-switch-when="null">
-                <h2>{{focused_post.Linkdescription}} <i style="font-size: 12px; color: #666;">(self.{{focused_post.Subverse}})</i></h2>
-              </div>
-              <div ng-switch-when="undefined">
-                <h2>{{focused_post.Linkdescription}} <i style="font-size: 12px; color: #666;">(self.{{focused_post.Subverse}})</i></h2>
-              </div>
-              <div ng-switch-default>
-                <h2>{{focused_post.Title}} <i style="font-size: 12px; color: #666;">(self.{{focused_post.Subverse}})</i></h2>
-              </div>
-            </div>
-            <p>submitted {{timeDiff(focused_post.Date)}}
-               by <a href="">{{focused_post.Name}}</a>
-               to <b>{{focused_post.Subverse}}</b>
-               (<b style="color: #4aabe7;">+{{focused_post.Likes}}</b>|<b style="color: #8870ff;">-{{focused_post.Dislikes}}</b>)</p>
-            <b>{{focused_post.CommentCount}} comments</b>
+        <div ng-switch on="onSettings()">
+          <div ng-switch-when="true">
+            <ion-list>
+              <ion-item ng-click="goToMyAccount()" style="border-style: dotted !important; border-radius: 0px 1px 1px 0px !important" class="item-icon-left">
+                <i class="icon ion-ios-person"></i>
+                <h2>Account</h2>
+              </ion-item>
+              <div class="item item-divider"></div>
+              <ion-item style="border-style: dotted !important; border-radius: 0px 1px 1px 0px !important" ng-repeat="subverse in subverses" ng-click="getVPosts(subverse)" class="item item-icon-left item-icon-right">
+                <i class="icon ion-bookmark"></i>
+                <h2>{{ subverse }}</h2>
+                <i class="icon ion-ios-arrow-right"></i>
+              </ion-item>
+            </ion-list>
           </div>
-          <div class="card">
-            <div class="item item-divider item-text-wrap item-text-left">
-              <p>{{focused_post.MessageContent}}</p>
-            </div>
+          <div ng-switch-default>
+            <p>empty</p>
           </div>
-          <ion-list>
-            <ion-item ng-repeat="comment in comments" class="item-remove-animate item-text-left item-text-wrap">
-               <p>(<b style="color: #4aabe7;">+{{comment.Likes}}</b>|<b style="color: #8870ff;">-{{comment.Dislikes}}</b>)
-               <a href="">{{comment.Name}}</a> <i>{{timeDiff(comment.Date)}}</i></p>
-              <p>{{comment.CommentContent}}</p>
-            </ion-item>
-          </ion-list>
         </div>
       </ion-slide>
       <ion-slide>
-        <ion-list>
-          <ion-item class="item-remove-animate item-text-wrap item-text-left">
-            <h2><i class="ion-ios-person"></i> {{focused_user.Name}}'s Account</h2>
-          </ion-item>
-          <div class="item item-divider">
-            <p>registered {{timeDiff(focused_user.RegistrationDate)}}</p>
+        <div ng-switch on="onPosts()">
+          <div ng-switch-when="true">
+            <ion-list can-swipe="true">
+              <ion-item style="border-style: dotted !important; border-radius: 0px 1px 1px 0px !important" class="item item-input-inset">
+                <label class="item-input-wrapper">
+                  <input type="text" placeholder="Search">
+                </label>
+                <button class="button button-small button-clear">
+                  Submit
+                </button>
+              </ion-item>
+              <div ng-switch on="posts">
+                <div ng-switch-when="empty">
+                  <div class="row">
+                    <span class="badge badge-royal col">loading posts</span>
+                  </div>
+                  <div class="row">
+                    <span class="col"></span>
+                    <span class="col"></span>
+                    <span class="col"></span>
+                    <span class="col"><ion-spinner icon="ios"></ion-spinner></span>
+                    <span class="col"></span>
+                    <span class="col"></span>
+                    <span class="col"></span>
+                  </div>
+                </div>
+                <div ng-switch-when="undefined">
+                  <div class="row">
+                    <span class="badge badge-royal col">loading posts</span>
+                  </div>
+                  <div class="row">
+                    <span class="col"></span>
+                    <span class="col"></span>
+                    <span class="col"></span>
+                    <span class="col"><ion-spinner icon="ios"></ion-spinner></span>
+                    <span class="col"></span>
+                    <span class="col"></span>
+                    <span class="col"></span>
+                  </div>
+                </div>
+                <div ng-switch-default>
+                  <ion-item on-hold="post.hideMenu = !post.hideMenu" style="border-style: dotted !important; border-radius: 0px 1px 1px 0px !important" on-hold="showOptions({{post.id}})" ng-repeat="post in posts" class="item-text-wrap item-text-inset item-avatar item-icon-right">
+                      <img ng-click="goToLink(post);" ng-src="{{post.thumbnail}}" err-src="img/voat-goat.png">
+                      <div ng-click="focus_on(post);">
+                        <div ng-switch on="post.title">
+                          <div ng-switch-default>
+                            <h2>{{post.title}} <i style="font-size: 12px; color: #666;">(self.{{post.subverse}})</i></h2>
+                          </div>
+                        </div>
+                        <p>submitted {{timeDiff(post.date)}}
+                           by <b>{{post.name}}</b>
+                           to <b>{{post.subverse}}</b>
+                           (<b style="color: #4aabe7;">+{{post.upVotes}}</b>|<b style="color: #8870ff;">-{{post.downVotes}}</b>)
+                           </p>
+                        <b>{{post.commentCount}} comments</b>
+                        <i class="badge badge-royal">{{post.upVotes - post.downVotes}}</i>
+                      </div>
+                      <div style="border: 0px;" ng-hide="!post.hideMenu" class="item item-text-center center item-animate">
+                        <br>
+                        <div id="{{post.id}}" class="row">
+                          <i ng-click="save('submissions', {{post.id}})" class="ion-android-star-outline col"></i>
+                          <!--
+                          <i ng-click="hide('submissions', {{post.id}})" class="ion-eye-disabled col col-20"></i>
+                          <i ng-click="report('submissions', {{post.id}})" class="ion-alert-circled col col-20"></i>
+                          -->
+                          <i ng-click="vote('submission', {{post.id}}, 1)" class="ion-arrow-up-a col"></i>
+                          <i ng-click="vote('submission', {{post.id}}, -1)" class="ion-arrow-down-a col"></i>
+                        </div>
+                      </div>
+                  </ion-item>
+                </div>
+              </div>
+            </ion-list>
+            <div ng-switch on="posts">
+              <div ng-switch-when="empty">
+              </div>
+              <div ng-switch-when="undefined">
+              </div>
+              <div ng-switch-default>
+                <div ng-if="enoughPosts()">
+                  <ion-infinite-scroll
+                    on-infinite="loadMore();"
+                    distance="25%"
+                    immediate-check="false">
+                  </ion-infinite-scroll>
+                </div>
+              </div>
+            </div>
           </div>
-        </ion-list>
+          <div ng-switch-default>
+            <p>empty</p>
+          </div>
+        </div>
+      </ion-slide>
+      <ion-slide>
+        <div ng-switch on="onPost()">
+          <div ng-switch-when="true">
+            <div>
+              <div on-tap="togglePostMenu();" class="item item-avatar item-text-wrap">
+                <img  ng-click="goToLink(focused_post);" ng-src="{{focused_post.thumbnail}}" err-src="img/voat-goat.png">
+                  <h2>{{focused_post.title}} <i style="font-size: 12px; color: #666;">(self.{{focused_post.subverse}})</i></h2>
+                <p>submitted {{timeDiff(focused_post.date)}}
+                   by <a href="">{{focused_post.userName}}</a>
+                   to <b>{{focused_post.subverse}}</b>
+                   (<b style="color: #4aabe7;">+{{focused_post.upVotes}}</b>|<b style="color: #8870ff;">-{{focused_post.downVotes}}</b>)</p>
+                <b>{{focused_post.commentCount}} comments</b>
+              </div>
+              <div ng-show="showPostMenu" class="item item-text-center center item-animate">
+                <div class="row">
+                  <i ng-show="onMySubmission()" ng-click="delete('submissions', {{focused_post.id}})" class="ion-ios-trash col"></i>
+                  <i ng-show="onMySubmission() && !isLink()" ng-click="toggleEdit()" class="ion-edit col"></i>
+                  <i ng-click="save('submissions', {{focused_post.id}})" class="ion-android-star-outline col"></i>
+                  <i ng-click="vote('submission', {{focused_post.id}},  1)" class="ion-arrow-up-a col"></i>
+                  <i ng-click="vote('submission', {{focused_post.id}}, -1)" class="ion-arrow-down-a col"></i>
+                </div>
+              </div>
+              <div ng-show="focused_post.content">
+                <div ng-if="isEditting">
+                  <ion-item class="item item-divider item-text-wrap item-text-left">
+                    <textarea id="edittedContent" style="resize: none; width: 100%">{{focused_post.content}}</textarea>
+                    <button class="button button-small button-block button-outline button-royal" on-tap="edit('submissions', {{focused_post.id}});">Save</button>
+                  </ion-item>
+                </div>
+                <div ng-if="!isEditting">
+                  <div class="item item-divider item-text-wrap item-text-left">
+                    <p ng-bind-html="focused_post.formattedContent"></p>
+                  </div>
+                </div>
+              </div>
+              <ion-list>
+                <label class="item item-input">
+                  <textarea style="resize: none; width: 80%" id="commentText" ng-change="canComment()" ng-model="commentText" placeholder="Comments"></textarea>
+                  <button ng-show="canComment();" class="button button-small button-outline button-royal" on-tap="comment();">Comment</button>
+                </label>
+                <div ng-switch on="comments">
+                  <div ng-switch-when="undefined">
+                    <div class="row">
+                      <span class="badge badge-royal col">loading comments</span>
+                    </div>
+                    <div class="row">
+                      <span class="col"></span>
+                      <span class="col"></span>
+                      <span class="col"></span>
+                      <span class="col"><ion-spinner icon="ios"></ion-spinner></span>
+                      <span class="col"></span>
+                      <span class="col"></span>
+                      <span class="col"></span>
+                    </div>
+                  </div>
+                  <div ng-switch-when="">
+                    <div class="row">
+                      <span class="badge badge-royal col">loading comments</span>
+                    </div>
+                    <div class="row">
+                      <span class="col"></span>
+                      <span class="col"></span>
+                      <span class="col"></span>
+                      <span class="col"><ion-spinner icon="ios"></ion-spinner></span>
+                      <span class="col"></span>
+                      <span class="col"></span>
+                      <span class="col"></span>
+                    </div>
+                  </div>
+                  <div ng-switch-when="empty">
+                    <div class="row">
+                      <span class="badge badge-royal col">there aren't any comments</span>
+                    </div>
+                  </div>
+                  <div ng-switch-default>
+                    <ion-item on-tap="comment.hideMenu = !comment.hideMenu" style="left: {{comment.level}}px; border-style: dotted !important; border-radius: 0px 1px 1px 0px !important" ng-repeat="comment in comments" class="item-remove-animate item-text-left item-text-wrap">
+                       <p>(<b style="color: #4aabe7;">+{{comment.upVotes}}</b>|<b style="color: #8870ff;">-{{comment.downVotes}}</b>)
+                       <a href="">{{comment.userName}}</a> <i>{{timeDiff(comment.date)}}</i></p>
+                      <p ng-bind-html="comment.formattedContent"></p>
+                      <div style="border: 0px;" ng-hide="!comment.hideMenu" class="item item-text-center center item-animate">
+                        <br>
+                        <div id="{{comment.id}}" class="row">
+                          <i ng-click="save('comments', {{comment.id}})" class="ion-android-star-outline col"></i>
+                          <!--
+                          <i ng-click="hide('comments', {{comment.id}})" class="ion-eye-disabled col col-20"></i>
+                          <i ng-click="report('comments', {{comment.id}})" class="ion-alert-circled col col-20"></i>
+                          -->
+                          <i ng-click="vote('comment', {{comment.id}}, 1)" class="ion-arrow-up-a col"></i>
+                          <i ng-click="vote('comment', {{comment.id}}, -1)" class="ion-arrow-down-a col"></i>
+                        </div>
+                      </div>
+                    </ion-item>
+                  </div>
+                </div>
+              </ion-list>
+            </div>
+          </div>
+          <div ng-switch-default>
+            <p>empty</p>
+          </div>
+        </div>
+      </ion-slide>
+      <ion-slide>
+        <div ng-switch on="onAccount()">
+          <div ng-switch-when="true">
+            <br><br><br>
+            <div ng-switch on="focused_user">
+              <div ng-switch-when="undefined">
+                <div class="row">
+                  <span class="badge badge-royal col">loading account</span>
+                </div>
+                <div class="row">
+                  <span class="col"></span>
+                  <span class="col"></span>
+                  <span class="col"></span>
+                  <span class="col"><ion-spinner icon="ios"></ion-spinner></span>
+                  <span class="col"></span>
+                  <span class="col"></span>
+                  <span class="col"></span>
+                </div>
+              </div>
+              <div ng-switch-default>
+                <ion-list>
+                  <ion-item style="border-style: dotted !important; border-radius: 0px 1px 1px 0px !important" class="item item-avatar item-text-wrap">
+                    <img ng-src="{{focused_user.profilePicture}}"></img>
+                    <h2>{{focused_user.userName}}'s Account</h2>
+                  </ion-item>
+                  <div class="item item-divider">
+                    <p>registered {{timeDiff(focused_user.registrationDate)}}</p>
+                    <button ng-click="logout()" ng-show="onMyAccount()" class="button button-block button-royal">
+                      Logout
+                    </button>
+                  </div>
+                  <div ng-switch on="userItems">
+                    <div ng-switch-when="undefined">
+                      <div class="row">
+                        <span class="badge badge-royal col">loading</span>
+                      </div>
+                      <div class="row">
+                        <span class="col"></span>
+                        <span class="col"></span>
+                        <span class="col"></span>
+                        <span class="col"><ion-spinner icon="ios"></ion-spinner></span>
+                        <span class="col"></span>
+                        <span class="col"></span>
+                        <span class="col"></span>
+                      </div>
+                    </div>
+                    <div ng-switch-when="empty">
+                      <div class="row">
+                        <span class="badge badge-royal col">there aren't any comments</span>
+                      </div>
+                    </div>
+                    <div ng-switch-default>
+                      <div ng-if="currentSubmissionTab == 0">
+                        <ion-item ng-repeat="userItem in userItems" on-hold="userItem.hideMenu = !userItem.hideMenu" style="border-style: dotted !important; border-radius: 0px 1px 1px 0px !important" class="item-text-wrap item-text-inset item-avatar item-icon-right">
+                            <img ng-click="goToLink(userItem);" ng-src="{{userItem.thumbnail}}" err-src="img/voat-goat.png">
+                            <div ng-click="focus_on(userItem);">
+                              <div ng-switch on="userItem.title">
+                                <div ng-switch-default>
+                                  <h2>{{userItem.title}} <i style="font-size: 12px; color: #666;">(self.{{userItem.subverse}})</i></h2>
+                                </div>
+                              </div>
+                              <p>submitted {{timeDiff(userItem.date)}}
+                                 by <b>{{userItem.userName}}</b>
+                                 to <b>{{userItem.subverse}}</b>
+                                 (<b style="color: #4aabe7;">+{{userItem.upVotes}}</b>|<b style="color: #8870ff;">-{{userItem.downVotes}}</b>)
+                                 </p>
+                              <b>{{userItem.commentCount}} comments</b>
+                              <i class="badge badge-royal">{{userItem.upVotes - userItem.downVotes}}</i>
+                            </div>
+                            <div style="border: 0px;" ng-hide="!userItem.hideMenu" class="item item-text-center center item-animate">
+                              <div id="{{userItem.id}}" class="center row">
+                                <i ng-click="save('submissions', {{userItem.id}})" class="ion-android-star-outline col"></i>
+                                <!--
+                                <i ng-click="hide('submissions', {{post.id}})" class="ion-eye-disabled col col-20"></i>
+                                <i ng-click="report('submissions', {{post.id}})" class="ion-alert-circled col col-20"></i>
+                                -->
+                                <i ng-click="vote('submission', {{userItem.id}}, 1)" class="ion-arrow-up-a col"></i>
+                                <i ng-click="vote('submission', {{userItem.id}}, -1)" class="ion-arrow-down-a col"></i>
+                              </div>
+                            </div>
+                        </ion-item>
+                      </div>
+                      <div ng-if="currentSubmissionTab == 1">
+                        <ion-item on-tap="userItem.hideMenu = !userItem.hideMenu" style="border-style: dotted !important; border-radius: 0px 1px 1px 0px !important" ng-repeat="userItem in userItems" class="item-remove-animate item-text-left item-text-wrap">
+                           <p>(<b style="color: #4aabe7;">+{{userItem.upVotes}}</b>|<b style="color: #8870ff;">-{{userItem.downVotes}}</b>)
+                           <a href="">{{userItem.userName}}</a> <i>{{timeDiff(userItem.date)}}</i></p>
+                          <p ng-bind-html="userItem.formattedContent"></p>
+                          <div style="border: 0px;" ng-hide="!userItem.hideMenu" class="item item-text-center center item-animate">
+                            <br>
+                            <div id="{{userItem.id}}" class="row">
+                              <i ng-click="save('comments', {{userItem.id}})" class="ion-android-star-outline col"></i>
+                              <!--
+                              <i ng-click="hide('comments', {{comment.id}})" class="ion-eye-disabled col col-20"></i>
+                              <i ng-click="report('comments', {{comment.id}})" class="ion-alert-circled col col-20"></i>
+                              -->
+                              <i ng-click="vote('comment', {{userItem.id}}, 1)" class="ion-arrow-up-a col"></i>
+                              <i ng-click="vote('comment', {{userItem.id}}, -1)" class="ion-arrow-down-a col"></i>
+                            </div>
+                          </div>
+                        </ion-item>
+                      </div>
+                    </div>
+                  </div>
+                </ion-list>
+              </div>
+            </div>
+          </div>
+          <div ng-switch-default>
+            <p>empty</p>
+          </div>
+        </div>
+      </ion-slide>
+      <ion-slide>
+        <div ng-switch on="onLogin()">
+          <div ng-switch-when="true">
+            <div class="list">
+              <label class="item item-input item-floating-label">
+                <span class="input-label">Username</span>
+                <input type="text" id="user" placeholder="Username">
+              </label>
+              <label class="item item-input item-floating-label">
+                <span class="input-label">Password</span>
+                <input type="password" id="pass" placeholder="Password">
+              </label>
+              <button ng-click="login()" class="button button-block button-royal">
+                Login
+              </button>
+            </div>
+          </div>
+          <div ng-switch-default>
+            <p>empty</p>
+          </div>
+        </div>
+      </ion-slide>
+      <ion-slide>
+        <div ng-switch on="onSubmission()">
+          <div ng-switch-when="true">
+            <br><br>
+            <div class="list">
+              <label class="item item-input item-floating-label">
+                <span class="input-label">Title</span>
+                <input type="text" id="title" placeholder="Title">
+              </label>
+              <label class="item item-input item-floating-label">
+                <span class="input-label">Subverse</span>
+                <input type="text" id="subverse" placeholder="Subverse">
+              </label>
+              <label ng-show="onLinkSubmission()" class="item item-input item-floating-label">
+                <span class="input-label">Link</span>
+                <input type="text" id="link" placeholder="Link">
+              </label>
+              <label ng-show="!onLinkSubmission()" class="item item-input item-floating-label">
+                <span class="input-label">Content</span>
+                <input type="text" id="content" placeholder="Content">
+              </label>
+              <button ng-click="submitPost()" class="button button-block button-royal">
+                Submit to Voat
+              </button>
+            </div>
+          </div>
+          <div ng-switch-default>
+            <p>empty</p>
+          </div>
+        </div>
       </ion-slide>
     </ion-slide-box>
   </ion-content>

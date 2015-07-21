@@ -1,1 +1,16 @@
 /* Empty. Add your own CSS if you like */
+.item-animate.ng-hide {
+  height:0;
+  opacity:0;
+  padding:0;
+}
+
+.item-animate.ng-hide-remove,
+.item-animate.ng-hide-add {
+  display: block !important;
+  transition: all linear 100ms !important;
+}
+
+.center {
+  text-align: center !important;
+}

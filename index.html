@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, width=device-width">
-    <title></title>
+    <title>Voat</title>
 
     <link href="lib/ionic/css/ionic.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
@@ -13,13 +13,26 @@
     -->
 
     <!-- ionic/angularjs js -->
+    <script src="js/jquery-1.11.0.min.js"></script>
     <script src="lib/ionic/js/ionic.bundle.js"></script>
+    <script src="js/angular-resource.min.js"></script>
+    <script src="js/angular.dcb-img-fallback.min.js"></script>
 
     <!-- cordova script (this will be a 404 during development) -->
     <script src="lib/ngCordova/dist/ng-cordova.js"></script>
     <script src="cordova.js"></script>
 
     <!-- your app's js -->
+    <script type="text/javascript">
+    Array.prototype.move = function(from, to) {
+        this.splice(to, 0, this.splice(from, 1)[0]);
+    };
+    String.prototype.repeat = function( num ){
+        return new Array( num + 1 ).join( this );
+    }
+    </script>
+    <script src="js/sprintf.js"></script>
+    <script src="js/angular-sprintf.js"></script>
     <script src="js/app.js"></script>
     <script src="js/controllers.js"></script>
     <script src="js/services.js"></script>
@@ -28,7 +41,7 @@
     <!--
       The nav bar that will be updated as we navigate between views.
     -->
-    
+
     <!--
       The views will be rendered in the <ion-nav-view> directive below
       Templates are in the /templates folder (but you could also

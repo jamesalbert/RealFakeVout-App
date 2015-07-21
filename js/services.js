@@ -1,36 +1,299 @@
 angular.module('starter.services', [])
 
 .factory('Voat', function($http) {
-  var posts;
+  var ip = 'http://192.168.0.15:5000';
   return {
-    get_posts: function() {
-      return $http.get('http://192.168.0.5:5000/api/frontpage')
-                  .then(function(result) {
-                    return result.data.posts;
+    get_posts: function(subverse, page) {
+      return $http.get(ip+'/api/posts/'+subverse+'/'+page)
+                  .success(function(data) {
+                    console.log(data.posts);
+                    return data.posts;
+                  })
+                  .error(function() {
+                    console.log('error');
+                    return {type: 'error', message: 'Either your network is weak or Voat is down.'}
                   })
       },
     get_subverses: function() {
-      return $http.get('http://192.168.0.5:5000/api/topsubverses')
+      return [
+        "Api",
+        "AskFakeVout",
+        "playground",
+        "Universall",
+        "Test",
+        "Anon",
+        "funnystuff",
+        "VOAT",
+        "MinCCP",
+        "Private",
+        "nsfw",
+        "announcements",
+        "FirstLetterRed",
+        "DogeTipRobot",
+        "UpVoat",
+        "fuerve",
+        "metang800",
+        "Luk3",
+        "jordanarydev",
+        "dogecoin",
+        "Fakevout",
+        "fatpeoplehate",
+        "NotDisliked",
+        "squ1dland",
+        "QuantumWannabe",
+        "nascar",
+        "Neilv",
+        "No",
+        "Nonillion",
+        "Mateon1",
+        "Jotboard",
+        "kingemocut",
+        "KJ4TIP",
+        "Krutonium",
+        "KyuBotTest",
+        "Leonelf",
+        "lisbot",
+        "gatorstestaccount",
+        "geckoTier",
+        "ggbnny",
+        "girlswearingvs",
+        "GK",
+        "goatherd",
+        "goatreader",
+        "GunOfSod",
+        "healdb",
+        "hkr8",
+        "human",
+        "humansbeingbros",
+        "itsmatt",
+        "iVoater",
+        "jabza",
+        "Jawnnypoo",
+        "Jayden",
+        "jcharv",
+        "jerv",
+        "johnska7",
+        "FFXIV",
+        "FirstLetterBig",
+        "dogecointesting",
+        "dogesmithtest",
+        "frame11",
+        "frontpage",
+        "DonDavio",
+        "donkeypie",
+        "doomrah",
+        "DtheZombie",
+        "edgymurphy",
+        "ells1231",
+        "Euphoric",
+        "EVE",
+        "Arkells",
+        "0fux",
+        "404",
+        "51rH0n3y84d93r",
+        "AdamTheBuizel",
+        "admin",
+        "akuta",
+        "andromeda5e",
+        "assguardian",
+        "balmanator",
+        "bd452",
+        "bot",
+        "bottest",
+        "Bugs",
+        "Cake",
+        "CassiekinTestbed",
+        "chubs",
+        "cillroy",
+        "CoatTest",
+        "dankestmemerinos",
+        "dcistestingthings",
+        "rch",
+        "RealNigzOnly",
+        "redchanit",
+        "RickyContra",
+        "roboreuters",
+        "RunningShoes",
+        "runswithscissors",
+        "ryan",
+        "Scaarus",
+        "schwiz",
+        "SCP",
+        "SexyBleach",
+        "ShinsekaiYori",
+        "Siege",
+        "sjwcoin",
+        "spacedicks",
+        "Spunky",
+        "storr",
+        "subverserequest",
+        "synnyster",
+        "tehyosh",
+        "termosapi",
+        "projectgoatalot",
+        "PurpleGoat",
+        "PutinLovesCats",
+        "PuttItOutPlease",
+        "PythonisFun",
+        "nulldev",
+        "OldPeopleThings",
+        "Ooer",
+        "oranges13",
+        "phroa",
+        "piratenaapje2",
+        "Pnoexz",
+        "pondnetic",
+        "poop",
+        "mydickismassive",
+        "n60storm4",
+        "VulcanBy123",
+        "watersnake",
+        "whatever",
+        "woofcat",
+        "X0x5F0x5F05xF05xF5FX",
+        "XvvvvvX",
+        "Xyrann",
+        "yayamateurs",
+        "yee",
+        "Yes",
+        "zeonin",
+        "vanin",
+        "varNinja",
+        "veuwer",
+        "viralstories",
+        "Voater4iOS",
+        "volcanodev",
+        "test2",
+        "testbot",
+        "testpwr",
+        "theultimat",
+        "thisisbot",
+        "tlam",
+        "Towelie",
+        "Trimth",
+        "TypograDark",
+        "TysonMcNeal",
+        "undone",
+        "vulcan"
+      ]
+    },
+    get_user: function(type, user) {
+      return $http.get(ip+'/api/user/'+type+'/'+user)
                   .then(function(result) {
-                    return result.data.subverses;
-                  })
-      },
-    get_userinfo: function(user) {
-      return $http.get('http://192.168.0.5:5000/api/userinfo/'+user)
-                  .then(function(result) {
+                    console.log(result);
                     return result.data;
                   })
-      },
-    get_v_posts: function(subverse) {
-      return $http.get('http://192.168.0.5:5000/api/subversefrontpage/'+subverse)
+    },
+    login: function(user, pass) {
+      req = {
+        url: ip+'/api/token',
+        method: 'POST',
+        data: {
+          grant_type: 'password',
+          username: user,
+          password: pass
+        }
+      }
+      return $http(req)
+              .then(function(result) {
+                return result.data;
+              })
+    },
+    comment: function(subverse, postId, comment) {
+      req = {
+        url: ip+'/api/comment',
+        method: 'POST',
+        data: {
+          token: window.localStorage['access_token'],
+          subverse: subverse,
+          postId: postId,
+          comment: comment
+        }
+      }
+      return $http(req)
+              .then(function(result) {
+                return result;
+              })
+    },
+    delete: function(type, id) {
+      req = {
+        url: ip+'/api/delete',
+        method: 'DELETE',
+        data: {
+          token: window.localStorage['access_token'],
+          type: type,
+          id: id
+        }
+      }
+      return $http(req)
+              .then(function(result) {
+                return result;
+              })
+    },
+    edit: function(type, id, content) {
+      req = {
+        url: ip+'/api/edit',
+        method: 'PUT',
+        data: {
+          token: window.localStorage['access_token'],
+          type: type,
+          id: id,
+          content: content
+        }
+      }
+      return $http(req)
+              .then(function(result) {
+                return result;
+              })
+    },
+    submit_post: function(payload) {
+      payload.token = window.localStorage['access_token']
+      console.log(payload);
+      req = {
+        url: ip+'/api/post',
+        method: 'POST',
+        data: payload
+      }
+      return $http(req)
+              .then(function(result) {
+                return result;
+              })
+    },
+    vote: function(type, id, vote) {
+      req = {
+        url: ip+'/api/vote',
+        method: 'POST',
+        data: {
+          token: window.localStorage['access_token'],
+          type: type,
+          id: id,
+          vote: vote
+        }
+      }
+      return $http(req)
+              .then(function(result) {
+                return result;
+              })
+    },
+    save: function(type, id) {
+      req = {
+        url: ip+'/api/save',
+        method: 'POST',
+        data: {
+          token: window.localStorage['access_token'],
+          type: type,
+          id: id
+        }
+      }
+      return $http(req)
+              .then(function(result) {
+                return result;
+              })
+    },
+    get_comments: function(subverse, id) {
+      return $http.get(ip+'/api/comments/'+subverse+'/'+id)
                   .then(function(result) {
-                    console.log(result.data);
-                    return result.data.posts;
-                  })
-      },
-    get_comments: function(id) {
-      return $http.get('http://192.168.0.5:5000/api/comments/'+id)
-                  .then(function(result) {
+                    console.log('comments: ' + JSON.stringify(result));
                     return result.data.comments;
                   })
     }};
