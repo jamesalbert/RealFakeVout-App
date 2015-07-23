@@ -1,19 +1,38 @@
 angular.module('starter.services', [])
 
-.factory('Voat', function($http) {
-  var ip = 'http://192.168.0.15:5000';
+.factory('cancel', function($q) {
+  return {request: $q.defer()};
+})
+
+.factory('Voat', function($http, cancel) {
+  //cancel.request.resolve('make way gentlemen');
+  var ip = 'https://relurk.com';
   return {
-    get_posts: function(subverse, page) {
-      return $http.get(ip+'/api/posts/'+subverse+'/'+page)
+    get_posts: function(subverse, page, search) {
+      console.log('loading posts...'+arguments.callee.caller);
+      url = ip+'/api/posts/'+subverse+'/'+page;
+      if (search) {
+        url += '/'+search;
+      }
+      return $http.get(url, {timeout: cancel.request.promise})
                   .success(function(data) {
-                    console.log(data.posts);
-                    return data.posts;
+                    return data.submissions;
                   })
                   .error(function() {
-                    console.log('error');
                     return {type: 'error', message: 'Either your network is weak or Voat is down.'}
                   })
       },
+      get_post: function(id) {
+        console.log('loading post...');
+        url = ip+'/api/post/'+id;
+        return $http.get(url, {timeout: cancel.request.promise})
+                    .success(function(data) {
+                      return data.submission;
+                    })
+                    .error(function() {
+                      return {type: 'error', message: 'Either your network is weak or Voat is down.'}
+                    })
+        },
     get_subverses: function() {
       return [
         "Api",
@@ -177,14 +196,15 @@ angular.module('starter.services', [])
         "vulcan"
       ]
     },
-    get_user: function(type, user) {
-      return $http.get(ip+'/api/user/'+type+'/'+user)
+    get_user: function(user, type) {
+      console.log('loading user...');
+      return $http.get(ip+'/api/user/'+user+'/'+type, {timeout: cancel.request.promise})
                   .then(function(result) {
-                    console.log(result);
                     return result.data;
                   })
     },
     login: function(user, pass) {
+      console.log('logging in...');
       req = {
         url: ip+'/api/token',
         method: 'POST',
@@ -200,6 +220,7 @@ angular.module('starter.services', [])
               })
     },
     comment: function(subverse, postId, comment) {
+      console.log('commenting...');
       req = {
         url: ip+'/api/comment',
         method: 'POST',
@@ -215,7 +236,43 @@ angular.module('starter.services', [])
                 return result;
               })
     },
+    replyToComment: function(subverse, subId, commentId, value) {
+      console.log('replying...');
+      req = {
+        url: ip+'/api/reply/comment',
+        method: 'POST',
+        data: {
+          token: window.localStorage['access_token'],
+          subverse: subverse,
+          subId: subId,
+          commentId: commentId,
+          value: value
+        }
+      }
+      return $http(req)
+              .then(function(result) {
+                return result;
+              })
+    },
+    replyToMessage: function(id, value) {
+      console.log('replying...');
+      req = {
+        url: ip+'/api/reply/message',
+        method: 'POST',
+        data: {
+          token: window.localStorage['access_token'],
+          id: id,
+          value: value
+        }
+      }
+      return $http(req)
+              .then(function(result) {
+                console.log(result);
+                return result;
+              })
+    },
     delete: function(type, id) {
+      console.log('deleting...');
       req = {
         url: ip+'/api/delete',
         method: 'DELETE',
@@ -231,6 +288,7 @@ angular.module('starter.services', [])
               })
     },
     edit: function(type, id, content) {
+      console.log('editing...');
       req = {
         url: ip+'/api/edit',
         method: 'PUT',
@@ -247,8 +305,8 @@ angular.module('starter.services', [])
               })
     },
     submit_post: function(payload) {
+      console.log('submitting...');
       payload.token = window.localStorage['access_token']
-      console.log(payload);
       req = {
         url: ip+'/api/post',
         method: 'POST',
@@ -260,6 +318,7 @@ angular.module('starter.services', [])
               })
     },
     vote: function(type, id, vote) {
+      console.log('voting...');
       req = {
         url: ip+'/api/vote',
         method: 'POST',
@@ -275,7 +334,21 @@ angular.module('starter.services', [])
                 return result;
               })
     },
+    get_messages: function(type, state) {
+      console.log('loading messages...');
+      token = window.localStorage['access_token'];
+      req = {
+        url: ip+'/api/messages/'+token+'/'+type+'/'+state,
+        method: 'GET'
+      }
+      return $http(req)
+              .then(function(result) {
+                console.log(result);
+                return result;
+              })
+    },
     save: function(type, id) {
+      console.log('saving...');
       req = {
         url: ip+'/api/save',
         method: 'POST',
@@ -291,9 +364,9 @@ angular.module('starter.services', [])
               })
     },
     get_comments: function(subverse, id) {
-      return $http.get(ip+'/api/comments/'+subverse+'/'+id)
+      console.log('loading comments...');
+      return $http.get(ip+'/api/comments/'+subverse+'/'+id, {timeout: cancel.request.promise})
                   .then(function(result) {
-                    console.log('comments: ' + JSON.stringify(result));
                     return result.data.comments;
                   })
     }};

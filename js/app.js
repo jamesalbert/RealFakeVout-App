@@ -6,6 +6,7 @@
 // 'starter.services' is found in services.js
 // 'starter.controllers' is found in controllers.js
 
+// ADD REACT
 angular.module('starter', ['ionic', 'dcbImgFallback', 'starter.controllers', 'starter.services', 'ngCordova', 'ngResource'])
 
 .run(function($ionicPlatform, $cordovaStatusbar) {
@@ -42,18 +43,39 @@ angular.module('starter', ['ionic', 'dcbImgFallback', 'starter.controllers', 'st
   }
 })
 
+.directive('focusMe', function($timeout) {
+  return {
+    link: function(scope, element, attrs) {
+
+      $timeout(function() {
+        element[0].focus();
+      });
+    }
+  };
+})
+
 .config(['$sceDelegateProvider', function($sceDelegateProvider) {
   $sceDelegateProvider.resourceUrlWhitelist(['self', 'http://fakevout.azurewebsites.net/api/v1/**']);
 }])
 
-.config(function($stateProvider, $urlRouterProvider, $cordovaInAppBrowserProvider) {
-  var defaultOptions = {
-    location: 'yes',
-    clearcache: 'no',
-    toolbar: 'yes'
-  };
-  document.addEventListener(function () {
-    $cordovaInAppBrowserProvider.setDefaultOptions(options)
+.config(function($stateProvider, $urlRouterProvider, $cordovaInAppBrowserProvider, $cordovaAppRateProvider) {
+  document.addEventListener("deviceready", function () {
+    var defaultOptions = {
+      location: 'yes',
+      clearcache: 'no',
+      toolbar: 'yes'
+    };
+    $cordovaInAppBrowserProvider.setDefaultOptions(defaultOptions)
+    var prefs = {
+     language: 'en',
+     appName: 'voatjuice'
+   };
+   /*
+   iosURL: '<my_app_id>',
+   androidURL: 'market://details?id=<package_name>',
+   windowsURL: 'ms-windows-store:Review?name=<...>'
+   */
+   $cordovaAppRateProvider.setPreferences(prefs)
   }, false);
   // Ionic uses AngularUI Router which uses the concept of states
   // Learn more here: https://github.com/angular-ui/ui-router
