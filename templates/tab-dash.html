@@ -21,7 +21,7 @@
       </div>
     </div>
     <h1 class="title"><img ng-click="showMenu()" src="img/voat-logo.png"></img></h1>
-    <div class="buttons" ng-show="onPost() && previousIndex == 3 && focused_post.userName == getUserName()">
+    <div class="buttons" ng-show="onPost() && previousIndex == 3 && lastViewedAccount == getUserName()">
       <button hidden id="historyButton" class="button button-clear button-dark" ng-click="goToMyAccount();">History <i class="ion-ios-arrow-forward"></i></button>
     </div>
   </ion-header-bar>
@@ -121,7 +121,6 @@
                     <span class="col"></span>
                   </div>
                 </div>
-                <!--<react-component name="Posts" posts="posts" watch-depth="reference" />-->
                 <div ng-switch-default>
                   <ion-item on-hold="post.hideMenu = !post.hideMenu" style="border-style: dotted !important; border-radius: 0px 1px 1px 0px !important" on-hold="showOptions({{post.id}})" ng-repeat="post in submissions" class="item-text-wrap item-text-inset item-avatar item-icon-right">
                       <img ng-click="goToLink(post);" ng-src="{{post.thumbnail}}" err-src="img/voat-goat.png">
@@ -162,12 +161,28 @@
               <div ng-switch-when="undefined">
               </div>
               <div ng-switch-default>
+                <div class="row">
+                  <div class="col"></div>
+                  <div class="col"></div>
+                  <div ng-if="loadingMore">
+                    <ion-spinner class="ios"></ion-spinner>
+                  </div>
+                  <div ng-if="!loadingMore">
+                    <button on-release="loadMore()" class="button button-small button-outline button-royal col">
+                      load more
+                    </button>
+                  </div>
+                  <div class="col"></div>
+                  <div class="col"></div>
+                </div>
+                <!--
                 <div ng-if="enoughPosts()">
                   <ion-infinite-scroll
                     on-infinite="loadMore();"
                     distance="10%">
                   </ion-infinite-scroll>
                 </div>
+              -->
               </div>
             </div>
           </div>
@@ -263,8 +278,8 @@
                   <div ng-switch-default>
                     <ion-item on-tap="comment.hideMenu = toggleCommentMenu(comment)" style="left: {{comment.level}}px; border-style: dotted !important; border-radius: 0px 1px 1px 0px !important" ng-repeat="comment in comments" class="item-remove-animate item-text-left item-text-wrap">
                       <b style="color: #4aabe7;">{{comment.upVotes}}</b> &int; <b style="color: #8870ff;">{{comment.downVotes}}</b> &int;
-                      {{comment.upVotes - comment.downVotes}}
-                       <b href="">{{comment.userName}}</b> <i>{{timeDiff(comment.date)}}</i></p>
+                      {{comment.upVotes - comment.downVotes}} &sdot;
+                       <b href="">{{comment.userName}}</b> &sdot; <i>{{timeDiff(comment.date)}}</i></p>
                       <div ng-if="comment.isEditing">
                         <label focus-me for="editedComment_{{comment.id}}">
                           <textarea autofocus ng-model="comment.content" rows="{{getRowCount(comment.content)}}" id="editedComment_{{comment.id}}" style="resize: none; width: 100%">{{comment.content}}</textarea>

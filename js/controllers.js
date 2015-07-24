@@ -4,6 +4,7 @@ angular.module('starter.controllers', [])
                                  $ionicTabsDelegate, $ionicListDelegate, $ionicLoading,
                                  $cordovaAppRate, $cordovaProgress, $cordovaInAppBrowser, $cordovaKeyboard,
                                  $ionicActionSheet, $ionicSlideBoxDelegate, $ionicNavBarDelegate, $ionicScrollDelegate) {
+
   /*
     starter function
   */
@@ -20,12 +21,14 @@ angular.module('starter.controllers', [])
     */
     $scope.currentSubverse = '_default';
     $scope.showPostMenu = false;
+    $scope.loadingMore = false;
     $scope.currentPage = 1;
     $scope.previousIndex;
     $scope.currentIndex = 1;
     $scope.currentAccountTab = 0;
     $scope.cachedScroll = 0;
     $scope.isediting = false;
+    $scope.lastViewedAccount = undefined;
     $scope.load_posts($scope.load_posts_callback);
     $scope.subverses = Voat.get_subverses();
   }
@@ -191,6 +194,7 @@ angular.module('starter.controllers', [])
     else {
       var name = $scope.focused_post.userName;
     }
+    $scope.lastViewedAccount = name;
     // go to the account slide
     $scope.goToSlide(3)
     $scope.getUserSubmissions(name, function(result) {
@@ -523,14 +527,25 @@ angular.module('starter.controllers', [])
     /*
       load more posts, callback for infinite scrolling
     */
+    $scope.loadingMore = true;
     // increment the page index
     $scope.currentPage += 1;
     // get more posts
     Voat.get_posts($scope.currentSubverse, $scope.currentPage, null).success(function(data) {
       // concatenate the new posts to the current ones
       $scope.submissions = $scope.submissions.concat(data.submissions);
+      /*
+      newSubmissions = $scope.submissions.concat(data.submissions);
+      if (newSubmissions.length > 100) {
+        $scope.submissions = newSubmissions.slice(25, newSubmissions.length);
+      }
+      else {
+        $scope.submissions = newSubmissions;
+      }
+      */
       // tell angular to stop the loading icon
-      $scope.$broadcast('scroll.infiniteScrollComplete');
+      $scope.loadingMore = false;
+      //$scope.$broadcast('scroll.infiniteScrollComplete');
     })
   }
 
