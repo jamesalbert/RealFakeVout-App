@@ -1,0 +1,133 @@
+<ion-view view-title="Post">
+  <ion-header-bar no-tap-scroll="true" align-title="center" class="bar-light">
+    <div class="buttons">
+      <!--<button class="button button-clear button-dark" on-release="goToPosts('back');"><i class="ion-ios-arrow-back"></i> Back</button>-->
+      <button class="button button-clear button-dark" on-release="goBack();"><i class="ion-ios-arrow-back"></i> Back</button>
+    </div>
+    <h1 class="title"><img ng-click="showMenu()" src="img/voat-logo.png"></img></h1>
+    <div class="buttons"></div>
+  </ion-header-bar>
+  <ion-content>
+    <ion-refresher
+      pulling-text="Pull to refresh..."
+      on-refresh="refresh()">
+    </ion-refresher>
+    <div ng-switch on="focused_post">
+      <div ng-switch-when="undefined">
+        <p>Loading...</p>
+      </div>
+      <div ng-switch-default>
+        <div class="item item-avatar item-text-wrap">
+          <img ng-click="goToLink(focused_post);" ng-src="{{focused_post.thumbnail}}" err-src="img/voat-goat.png" />
+          <div on-tap="togglePostMenu()">
+            <h2>{{focused_post.title}}</h2>
+            <p>
+            <i style="font-size: 12px; color: #8870ff;">{{focused_post.subverse}}</i> &sdot;
+            <b>{{focused_post.userName}}</b> &sdot;
+            {{timeDiff(focused_post.date)}} &sdot;
+            <b style="color: #4aabe7;">{{focused_post.upVotes}}</b> &int; <b style="color: #8870ff;">{{focused_post.downVotes}}</b> &int;
+            {{focused_post.upVotes - focused_post.downVotes}}
+            </p>
+            <b>{{focused_post.commentCount}} comments</b>
+          </div>
+        </div>
+        <div ng-show="showPostMenu && loggedIn()" class="item item-text-center center item-animate">
+          <div class="row">
+            <i ng-show="onMySubmission()" ng-click="delete('submissions', {{focused_post.id}})" class="ion-ios-trash col"></i>
+            <i ng-show="onMySubmission() && !isLink()" ng-click="toggleEdit()" class="ion-edit col"></i>
+            <i ng-click="save('submissions', {{focused_post.id}})" class="ion-android-star-outline col"></i>
+            <i ng-click="vote('submission', {{focused_post.id}},  1)" class="ion-arrow-up-a col"></i>
+            <i ng-click="vote('submission', {{focused_post.id}}, -1)" class="ion-arrow-down-a col"></i>
+          </div>
+        </div>
+        <div ng-show="focused_post.content">
+          <div ng-if="isediting">
+            <ion-item class="item item-divider item-text-wrap item-text-left">
+              <textarea autofocus rows="{{getRowCount(focused_post.content)}}" id="editedSubmission" style="resize: none; width: 100%">{{focused_post.content}}</textarea>
+              <button class="button button-small button-block button-outline button-royal" on-tap="edit('submissions', {{focused_post.id}});">Save</button>
+            </ion-item>
+          </div>
+          <div ng-if="!isediting">
+            <div class="item item-divider item-text-wrap item-text-left">
+              <p ng-bind-html="focused_post.formattedContent"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ion-list>
+      <label ng-show="loggedIn()" class="item item-input">
+        <textarea style="resize: none; width: 80%" id="commentText" ng-change="canComment()" ng-model="commentText" placeholder="commenting as {{getUserName()}}"></textarea>
+        <button ng-show="canComment();" class="button button-small button-outline button-royal" on-tap="comment();">Comment</button>
+      </label>
+      <div ng-switch on="comments">
+        <div ng-switch-when="undefined">
+          <div class="row">
+            <span class="badge badge-royal col">loading comments</span>
+          </div>
+          <div class="row">
+            <span class="col"></span>
+            <span class="col"></span>
+            <span class="col"></span>
+            <span class="col"><ion-spinner icon="ios"></ion-spinner></span>
+            <span class="col"></span>
+            <span class="col"></span>
+            <span class="col"></span>
+          </div>
+        </div>
+        <div ng-switch-when="">
+          <div class="row">
+            <span class="badge badge-royal col">loading comments</span>
+          </div>
+          <div class="row">
+            <span class="col"></span>
+            <span class="col"></span>
+            <span class="col"></span>
+            <span class="col"><ion-spinner icon="ios"></ion-spinner></span>
+            <span class="col"></span>
+            <span class="col"></span>
+            <span class="col"></span>
+          </div>
+        </div>
+        <div ng-switch-when="empty">
+          <div class="row">
+            <span class="badge badge-royal col">there aren't any comments</span>
+          </div>
+        </div>
+        <div ng-switch-default>
+          <ion-item on-tap="comment.hideMenu = toggleCommentMenu(comment)" style="left: {{comment.level}}px; width: calc(100% - {{comment.level}}px); border-style: dotted !important; border-left-style: solid !important; border-radius: 0px 1px 1px 0px !important" ng-repeat="comment in comments" class="item-remove-animate item-text-left item-text-wrap">
+            <div class="row">
+              <b href="" class="col col-90">{{comment.userName}}</b>
+              <p class="col col-10"><b style="color: #4aabe7;">{{comment.upVotes - comment.downVotes}}</b> &int;</p>
+            </div>
+            <div ng-if="comment.isEditing">
+              <label focus-me for="editedComment_{{comment.id}}">
+                <textarea autofocus ng-model="comment.content" rows="{{getRowCount(comment.content)}}" id="editedComment_{{comment.id}}" style="resize: none; width: 100%">{{comment.content}}</textarea>
+                <div ng-if="comment.id == 'fakeid'">
+                  <button class="button button-small button-block button-outline button-royal" on-tap="replyToComment(comment);">save</button>
+                </div>
+                <div ng-if="comment.id != 'fakeid'">
+                  <button class="button button-small button-block button-outline button-royal" on-tap="edit('comments', {{comment.id}});">save</button>
+                </div>
+              </label>
+            </div>
+            <div ng-if="!comment.isEditing">
+              <p ng-bind-html="comment.formattedContent"></p>
+            </div>
+            <div style="border: 0px;" ng-hide="!comment.hideMenu || !loggedIn()" class="item item-text-center center item-animate">
+              <br>
+              <div id="{{comment.id}}" class="row">
+                <i ng-show="onMyComment(comment.userName)" ng-click="delete('comments', {{comment.id}})" class="ion-ios-trash col"></i>
+                <i ng-show="onMyComment(comment.userName)" ng-click="toggleCommentEdit(comment)" class="ion-edit col"></i>
+                <i ng-show="!onMyComment(comment.userName)" ng-click="createCommentReply(comment)" class="ion-ios-undo col"></i>
+                <i ng-click="save('comments', {{comment.id}})" class="ion-android-star-outline col"></i>
+                <i ng-click="vote('comment', {{comment.id}}, 1)" class="ion-arrow-up-a col"></i>
+                <i ng-click="vote('comment', {{comment.id}}, -1)" class="ion-arrow-down-a col"></i>
+              </div>
+            </div>
+          </ion-item>
+        </div>
+      </div>
+    </ion-list>
+  </ion-content>
+</ion-view>

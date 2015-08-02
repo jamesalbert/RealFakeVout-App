@@ -1,0 +1,114 @@
+<ion-view view-title="Voat">
+  <ion-header-bar no-tap-scroll="true" align-title="center" class="bar-light">
+    <div class="buttons">
+      <button class="button button-clear button-dark" on-release="goToSettings();"><i class="ion-settings"></i></button>
+    </div>
+    <h1 class="title"><img ng-click="showMenu()" src="img/voat-logo.png"></img></h1>
+    <div class="buttons">
+    </div>
+  </ion-header-bar>
+  <ion-content>
+    <ion-refresher
+      pulling-text="Pull to refresh..."
+      on-refresh="refresh()">
+    </ion-refresher>
+    <ion-list can-swipe="true">
+      <ion-item style="border-style: dotted !important; border-top-color: white !important; border-radius: 0px 1px 1px 0px !important" class="item item-input-inset">
+        <label class="item-input-wrapper">
+          <input id="search" type="text" placeholder="Search">
+        </label>
+        <button ng-click="searchPosts()" class="button button-small button-clear">
+          Submit
+        </button>
+      </ion-item>
+      <div ng-switch on="submissions">
+        <div ng-switch-when="empty">
+          <div class="row">
+            <span class="badge badge-royal col">there aren't any posts</span>
+          </div>
+        </div>
+        <div ng-switch-when="undefined">
+          <div class="row">
+            <span class="badge badge-royal col">loading posts</span>
+          </div>
+          <div class="row">
+            <span class="col"></span>
+            <span class="col"></span>
+            <span class="col"></span>
+            <span class="col"><ion-spinner icon="ios"></ion-spinner></span>
+            <span class="col"></span>
+            <span class="col"></span>
+            <span class="col"></span>
+          </div>
+        </div>
+        <div ng-switch-default>
+          <ion-item id="postID_{{post.id}}" on-hold="post.hideMenu = !post.hideMenu" style="border-style: dotted !important; border-radius: 0px 1px 1px 0px !important" on-hold="showOptions({{post.id}})" ng-repeat="post in submissions" class="item-text-wrap item-text-inset item-avatar item-icon-right">
+              <img ng-click="goToLink(post);" ng-src="{{post.thumbnail}}" err-src="img/voat-goat.png">
+              <div ng-click="goToPost(post);">
+                <div ng-switch on="post.title">
+                  <div ng-switch-default>
+                    <h2 style="max-width: 200px; word-wrap:break-word;">{{post.title}}</h2>
+                    <i class="badge badge-royal">{{post.commentCount}}</i>
+                  </div>
+                </div>
+                <p>
+                  <i style="font-size: 12px; color: #8870ff;">{{post.subverse}}</i> &sdot;
+                  <b>{{post.userName}}</b>
+                   </p>
+                   <p>
+                     <i style="font-size: 12px;">{{timeDiff(post.date)}}</i> &sdot;
+                   <b style="color: #4aabe7;">{{post.upVotes}}</b> &int; <b style="color: #8870ff;">{{post.downVotes}}</b> &int;
+                   <b>{{post.upVotes - post.downVotes}}</b>
+                 </p>
+              </div>
+              <div style="border: 0px;" ng-hide="!post.hideMenu || !loggedIn()" class="item item-text-center center item-animate">
+                <br>
+                <!--
+                <i ng-click="hide('submissions', {{post.id}})" class="ion-eye-disabled col col-20"></i>
+                <i ng-click="report('submissions', {{post.id}})" class="ion-alert-circled col col-20"></i>
+                -->
+                <div id="{{post.id}}" class="row">
+                  <i ng-click="save('submissions', {{post.id}})" class="ion-android-star-outline col"></i>
+                  <div class="col"></div>
+                  <i ng-click="vote('submission', {{post.id}}, 1)" class="ion-arrow-up-a col"></i>
+                  <div class="col"></div>
+                  <i ng-click="vote('submission', {{post.id}}, -1)" class="ion-arrow-down-a col"></i>
+                  <div class="col"></div>
+                </div>
+              </div>
+          </ion-item>
+        </div>
+      </div>
+    </ion-list>
+    <div ng-switch on="submissions">
+      <div ng-switch-when="empty">
+      </div>
+      <div ng-switch-when="undefined">
+      </div>
+      <div ng-switch-default>
+        <div class="row">
+          <div class="col"></div>
+          <div class="col"></div>
+          <div ng-if="loadingMore">
+            <ion-spinner class="ios"></ion-spinner>
+          </div>
+          <div ng-if="!loadingMore">
+            <button style="border-radius: 30px !important; width: 75px !important" on-release="loadMore()" class="button button-small button-outline button-royal col">
+              more
+            </button>
+          </div>
+          <div class="col"></div>
+          <div class="col"></div>
+        </div>
+        <!--
+        <div ng-if="enoughPosts()">
+          <ion-infinite-scroll
+            on-infinite="loadMore();"
+            distance="10%">
+          </ion-infinite-scroll>
+        </div>
+      -->
+      </div>
+    </div>
+  </ion-content>
+</ion-view>

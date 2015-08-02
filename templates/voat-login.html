@@ -1,0 +1,26 @@
+<ion-view view-title="Template">
+  <ion-header-bar no-tap-scroll="true" align-title="center" class="bar-light">
+    <div class="buttons">
+      <!--<button class="button button-clear button-dark" on-release="goToSettings();"><i class="ion-ios-arrow-back"></i> Back</button>-->
+      <button class="button button-clear button-dark" on-release="goBack();"><i class="ion-ios-arrow-back"></i> Back</button>
+    </div>
+    <h1 class="title"><img ng-click="showMenu()" src="img/voat-logo.png"></img></h1>
+    <div class="buttons">
+    </div>
+  </ion-header-bar>
+  <ion-content>
+    <div class="list">
+      <label class="item item-input item-floating-label">
+        <span class="input-label">Username</span>
+        <input type="text" id="user" placeholder="Username">
+      </label>
+      <label class="item item-input item-floating-label">
+        <span class="input-label">Password</span>
+        <input type="password" id="pass" placeholder="Password">
+      </label>
+      <button ng-click="login()" class="button button-block button-royal">
+        Login
+      </button>
+    </div>
+  </ion-content>
+</ion-view>

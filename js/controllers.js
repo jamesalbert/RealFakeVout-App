@@ -1,8 +1,8 @@
 angular.module('starter.controllers', [])
 
-.controller('DashCtrl', function($scope, Voat, cancel, $q, $sce,
-                                 $ionicTabsDelegate, $ionicListDelegate, $ionicLoading,
-                                 $cordovaAppRate, $cordovaProgress, $cordovaInAppBrowser, $cordovaKeyboard,
+.controller('VoatCtrl', function($rootScope, $state, $rootScope, Voat, cancel, $q, $sce, $stateParams,
+                                 $ionicTabsDelegate, $ionicListDelegate, $ionicLoading, $ionicViewSwitcher,
+                                 $cordovaProgress, $cordovaInAppBrowser, $cordovaKeyboard,
                                  $ionicActionSheet, $ionicSlideBoxDelegate, $ionicNavBarDelegate, $ionicScrollDelegate) {
 
   /*
@@ -13,135 +13,132 @@ angular.module('starter.controllers', [])
     /*
     sets global variables:
       currentPage  - which page the user is on
-      currentIndex - which slide the user is on
+      currentState - which slide the user is on
       cachedScroll - cached scroll value for main posts list
 
     loads initial posts list
     loads subverse list
     */
-    $scope.currentSubverse = '_default';
-    $scope.showPostMenu = false;
-    $scope.loadingMore = false;
-    $scope.currentPage = 1;
-    $scope.previousIndex;
-    $scope.currentIndex = 1;
-    $scope.currentAccountTab = 0;
-    $scope.cachedScroll = 0;
-    $scope.isediting = false;
-    $scope.lastViewedAccount = undefined;
-    $scope.load_posts($scope.load_posts_callback);
-    $scope.subverses = Voat.get_subverses();
+
+    if ($rootScope.configured) {
+      return;
+    }
+
+    $rootScope.currentSubverse = '_default';
+    $rootScope.showPostMenu = false;
+    $rootScope.loadingMore = false;
+    $rootScope.currentPage = 1;
+    $rootScope.currentAccountTab = 0;
+    $rootScope.isediting = false;
+    $rootScope.isRequesting = false;
+    $rootScope.lastViewedAccount = undefined;
+    $rootScope.load_posts($rootScope.load_posts_callback);
+    $rootScope.subverses = Voat.get_subverses();
+    $rootScope.history = [];
+    $rootScope.lastChange;
+    $rootScope.configured = true;
   }
 
   /*
     navigation controls
   */
 
-  $scope.goBack = function() {
+  $rootScope.goBack = function() {
     /*
     go to the previous slide
     */
-    $ionicSlideBoxDelegate.previous();
-    if ($scope.onPosts()) {
-      // revert to previous scroll value
-      $scope.goToCachedScrollPosition();
-      // clear comments if user goes back to posts list
-      $scope.comments = [];
-    }
-    else if ($scope.onPost()) {
-      // clear account slide
-      $scope.clearAccountSlide();
-    }
+    $rootScope.goToState('back', $rootScope.history[0], {goingBack: true});
+    $rootScope.history.shift();
   }
 
-  $scope.goToSlide = function(slide) {
-    /*
-      go to specified slide
-    */
-    $ionicSlideBoxDelegate.slide(slide);
-  }
-
-  $scope.goToPrevious = function() {
-    /*
-      go to previous slide; allows for jumping past many slides
-    */
-    $scope.goToSlide($scope.previousIndex);
-  }
-
-  $scope.clearAccountSlide = function() {
+  $rootScope.clearAccountSlide = function() {
     /*
       ensure focused_user is cleared if sliding back from account
     */
-    $scope.focused_user = undefined;
-    $scope.userItems = undefined;
+    $rootScope.focused_user = undefined;
+    $rootScope.userItems = undefined;
+    $rootScope.currentAccountTab = 0;
   }
 
-  $scope.cancelRequests = function() {
+  $rootScope.cancelRequests = function() {
     /*
       cancel other http requests
     */
     cancel.request.resolve(0);
     cancel.request = $q.defer();
+    $rootScope.$broadcast('loading:finish');
   }
 
-  $scope.goToSettings = function() {
+  $rootScope.$on('loading:progress', function() {
+    $rootScope.isRequesting = true;
+  })
+
+  $rootScope.$on('loading:finish', function() {
+    $rootScope.isRequesting = false;
+  })
+
+  $rootScope.goToSettings = function() {
     /*
     go to settings
     */
 
-    $scope.cancelRequests();
-    // cache current scroll position
-    $scope.cacheScrollPosition();
-    // go to settings slide
-    $scope.goToSlide(0);
+    // go to settings state
+    $rootScope.goToState('back', 'voat.settings');
     // clear account items
-    $scope.clearAccountSlide();
-    // scroll to the top of the page
-    $ionicScrollDelegate.scrollTop();
+    $rootScope.clearAccountSlide();
   }
 
-  $scope.goToPosts = function() {
-    /*
-      go to main posts
-    */
-
-    // go to the posts list slide
-    $scope.goToSlide(1);
-    // scroll back to the cached scroll position
-    $scope.goToCachedScrollPosition();
-  }
-
-  $scope.goToPost = function() {
+  $rootScope.goToPost = function(post) {
     /*
       go to clicked post
     */
 
-    $scope.cancelRequests();
-    // go to the post slide
-    $scope.goToSlide(2);
-    // clear account items
-    $scope.clearAccountSlide();
-    // scroll to the top of the page
-    $ionicScrollDelegate.scrollTop();
+    $rootScope.comments = undefined;
+    if (!post) {
+      post = $rootScope.focused_post
+      if (!post) {
+        alert('no post to fallback on');
+        return;
+      }
+    }
+    try {
+      if (post.formattedContent.startsWith('<img') &&
+          post.formattedContent.endsWith('/>')) {
+            img = $(post.formattedContent);
+            // get width & height of image
+            w = img[0].width;
+            h = img[0].height;
+            // set desired width
+            img.attr('width', '340px');
+            // get desired height
+            ratio = parseFloat(340) / parseFloat(w);
+            img.attr('height', h * ratio+'px');
+            post.formattedContent = img[0].outerHTML;
+          }
+    } catch (err) {
+      console.log(err);
+    }
     // open comments
-    $scope.openPostComments($scope.focused_post);
+    $rootScope.goToState('forward', 'voat.post');
+    $rootScope.openPostComments(post);
   }
 
-  $scope.goToContext = function(commentId, submissionId) {
-    $scope.goToSlide(2);
-    $scope.clearAccountSlide();
+  $rootScope.goToContext = function(commentId, submissionId) {
     Voat.get_post(submissionId).then(function(result) {
-      $scope.openPostComments(result.data.submission);
-      //$ionicScrollDelegate.scrollTo($('#'+commentId).offset().top)
+      $rootScope.goToPost(result.data.submission);
     })
   }
 
-  $scope.createCommentReply = function(comment) {
-    commentRef = $.grep($scope.comments, function(e){
+  $rootScope.createCommentReply = function(comment) {
+    /*
+      creates a comment block that will be added
+      to the dom automatically via angular
+    */
+    commentRef = $.grep($rootScope.comments, function(e){
       return e.id == comment.id
     })[0];
-    i = $scope.comments.indexOf(commentRef);
-    $scope.comments.splice(i+1,0,{
+    i = $rootScope.comments.indexOf(commentRef);
+    $rootScope.comments.splice(i+1,0,{
       content: '',
       formattedContent: '',
       date: Date(),
@@ -157,116 +154,110 @@ angular.module('starter.controllers', [])
     });
   }
 
-  $scope.replyToComment = function(comment) {
+  $rootScope.replyToComment = function(comment) {
     subverse = comment.subverse;
     submissionId = comment.submissionID;
     commentId = comment.parentID;
     value = comment.content;
-    $scope.showLoading();
+    $rootScope.showLoading();
     Voat.replyToComment(subverse, submissionId, commentId, value).then(function(result) {
+      console.log(result)
       comment.isEditing = false;
       comment.content = result.data.data.content;
       comment.formattedContent = result.data.data.formattedContent;
       comment.id = result.data.data.id;
-      $scope.hideLoading();
+      $rootScope.hideLoading();
     })
   }
 
-  $scope.replyToMessage = function(message) {
+  $rootScope.replyToMessage = function(message) {
     id = message.id;
     value = $('#message_'+id).val();
-    $scope.showLoading();
+    $rootScope.showLoading();
     Voat.replyToMessage(id, value).then(function(result) {
       message.showMenu = false;
       $('#message_'+id).val('');
-      $scope.hideLoading();
+      $rootScope.hideLoading();
     })
   }
 
-  $scope.goToAccount = function() {
+  $rootScope.goToAccount = function() {
     /*
       go to a specified user's account
     */
 
-    if ($scope.onSettings() || $scope.previousIndex == 3) {
-      var name = $scope.focused_user.userName;
+    if ($rootScope.onSettings()) {
+      var name = $rootScope.focused_user.userName;
     }
     else {
-      var name = $scope.focused_post.userName;
+      var name = $rootScope.focused_post.userName;
     }
-    $scope.lastViewedAccount = name;
+    $rootScope.lastViewedAccount = name;
     // go to the account slide
-    $scope.goToSlide(3)
-    $scope.getUserSubmissions(name, function(result) {
-      $scope.userItems = result.items;
+    $rootScope.goToState('forward', 'voat.account')
+    $rootScope.getUserSubmissions(name, function(result) {
+      $rootScope.userItems = result.items;
     })
-    // scroll to the top of the page
-    $ionicScrollDelegate.scrollTop();
   }
 
-  $scope.goToMyAccount = function() {
+  $rootScope.goToMyAccount = function() {
     /*
       go to the logged-in user's account
     */
 
-    // check if logged in
-    if (window.localStorage['access_token']) {
-      // start loading spinner
-      $scope.showLoading();
-      // get name of logged in user
-      name = window.localStorage['user']
-      // get user info (name, registrating date)
-      $scope.getUserInfo(name, function(user) {
-        // user info is set globally
-        $scope.focused_user = user;
-        // stop loading
-        $scope.hideLoading();
-        // go to account slide
-        $scope.goToAccount();
-      })
-    }
-    else {
-      // if not logged in, go to login slide
-      $scope.goToLogin();
+    try {
+      // check if logged in
+      if (window.localStorage['access_token']) {
+        // start loading spinner
+        $rootScope.showLoading();
+        // get name of logged in user
+        name = window.localStorage['user']
+        // get user info (name, registrating date)
+        $rootScope.getUserInfo(name, function(user) {
+          // user info is set globally
+          $rootScope.focused_user = user;
+          // stop loading
+          $rootScope.hideLoading();
+          // go to account slide
+          $rootScope.goToAccount();
+        })
+      }
+      else {
+        // if not logged in, go to login slide
+        $rootScope.goToLogin();
+      }
+    } catch (err) {
+      alert(err);
     }
   }
 
-  $scope.goToLogin = function() {
+  $rootScope.goToLogin = function() {
     /*
       go to login page
     */
-    $scope.goToSlide(4);
+    $rootScope.goToState('forward', 'voat.login');
   }
 
-  $scope.cacheScrollPosition = function() {
-    $scope.cachedScroll = $ionicScrollDelegate.getScrollPosition().top;
-  }
-
-  $scope.goToCachedScrollPosition = function() {
-    $ionicScrollDelegate.scrollTo(0, $scope.cachedScroll);
-  }
-
-  $scope.goToSubmission = function() {
+  $rootScope.goToSubmission = function() {
     /*
       go to submission page
     */
-    $scope.cacheScrollPosition();
-    $scope.goToSlide(5);
+    $rootScope.goToSlide(5);
   }
 
   /*
     toggle commands
   */
 
-  $scope.togglePostMenu = function() {
-    $scope.showPostMenu = !$scope.showPostMenu;
+  $rootScope.togglePostMenu = function() {
+    $rootScope.showPostMenu = !$rootScope.showPostMenu;
   }
 
-  $scope.closePostMenu = function() {
-    $scope.showPostMenu = false;
+  $rootScope.closePostMenu = function() {
+    $rootScope.showPostMenu = false;
   }
 
-  $scope.updateTabs = function(index) {
+  $rootScope.updateTabs = function(index) {
     $('.tab-item').removeClass('active');
     $('#tab_'+index).addClass('active');
   }
@@ -275,7 +266,7 @@ angular.module('starter.controllers', [])
     User GET functions
   */
 
-  $scope.getLoggedInUser = function() {
+  $rootScope.getLoggedInUser = function() {
     user = window.localStorage['user']
     if (!user) {
       return false;
@@ -283,84 +274,84 @@ angular.module('starter.controllers', [])
     return user;
   }
 
-  $scope.onMyComment = function(name) {
-    return name == $scope.getLoggedInUser();
+  $rootScope.onMyComment = function(name) {
+    return name == $rootScope.getLoggedInUser();
   }
 
-  $scope.getUser = function(name, type, customCallback) {
+  $rootScope.getUser = function(name, type, customCallback) {
     if (!customCallback) {
       customCallback = function(result) {
-        $scope.userItems = result.items;
+        $rootScope.userItems = result.items;
       }
     }
     Voat.get_user(type, name).then(customCallback);
   }
 
-  $scope.getUserInfo = function(name, customCallback) {
-    $scope.getUser('info', name, customCallback);
+  $rootScope.getUserInfo = function(name, customCallback) {
+    $rootScope.getUser('info', name, customCallback);
   }
 
-  $scope.getUserSubmissions = function(name) {
-    $scope.getUser('submissions', name);
+  $rootScope.getUserSubmissions = function(name) {
+    $rootScope.getUser('submissions', name);
   }
 
-  $scope.getUserComments = function(name) {
-    $scope.getUser('comments', name);
+  $rootScope.getUserComments = function(name) {
+    $rootScope.getUser('comments', name);
   }
 
   /*
     Update Functions
   */
 
-  $scope.updateAccountTabs = function(index) {
-    $scope.cancelRequests();
-    $scope.updateTabs(index);
-    $scope.currentAccountTab = index;
-    $scope.userItems = undefined;
-    name = $scope.focused_user.userName;
+  $rootScope.updateAccountTabs = function(index) {
+    $ionicScrollDelegate.scrollTop();
+    $rootScope.cancelRequests();
+    $rootScope.updateTabs(index);
+    $rootScope.currentAccountTab = index;
+    $rootScope.userItems = undefined;
+    name = $rootScope.focused_user.userName;
     if (index == 0) {
-      $scope.getUserSubmissions(name);
+      $rootScope.getUserSubmissions(name);
     }
     else if (index == 1) {
-      $scope.getUserComments(name);
+      $rootScope.getUserComments(name);
     }
     else if (index == 2) {
-      Voat.get_messages('inbox', 'both').then(function(result) {
-        $scope.userItems = result.data.messages.reverse();
-        if ($scope.userItems.length == 0) {
-          $scope.userItems = 'empty';
+      Voat.get_messages('inbox', 'all').then(function(result) {
+        $rootScope.userItems = result.data.messages.reverse();
+        if ($rootScope.userItems.length == 0) {
+          $rootScope.userItems = 'empty';
         }
       });
     }
-    // scroll to the top of the page
-    $ionicScrollDelegate.scrollTop();
   }
 
-  $scope.updateSubmissionTabs = function(index) {
-    $scope.updateTabs(index);
+  $rootScope.updateSubmissionTabs = function(index) {
+    $rootScope.updateTabs(index);
   }
 
   /*
     user commands
   */
 
-  $scope.refresh = function() {
+  $rootScope.refresh = function() {
     /*
       overwrite the list of posts with new posts
     */
-    if ($scope.onPosts()) {
+    if ($rootScope.onPosts()) {
       // refresh posts if on posts page
-      $scope.load_posts($scope.load_posts_callback);
+      $rootScope.load_posts($rootScope.load_posts_callback);
+    }
+    else if ($rootScope.onPost()) {
+      // refresh comments if on comments page
+      $rootScope.load_comments($rootScope.focused_post.id);
     }
     else {
-      // refresh comments if on comments page
-      $scope.load_comments($scope.focused_post.id);
+      $rootScope.$broadcast('scroll.refreshComplete');
     }
   }
 
-  $scope.submitPost = function() {
-    // start loading spinner
-    $scope.showLoading();
+  $rootScope.submitPost = function() {
     // request payload for /api/user
     payload = {
       title: $('#title').val(),
@@ -368,8 +359,11 @@ angular.module('starter.controllers', [])
     }
     if (Voat.get_subverses().indexOf(payload.subverse) < 0) {
       alert('Try a subverse that exists ;)');
+      return;
     }
-    if ($scope.onLinkSubmission()) {
+    // start loading spinner
+    $rootScope.showLoading();
+    if ($rootScope.onLinkSubmission()) {
       // if submitting a link
       payload.url = $('#link').val();
     }
@@ -377,52 +371,63 @@ angular.module('starter.controllers', [])
       // other alternative is a self post
       payload.content = $('#content').val();
     }
+    if (payload.title.length < 5) {
+      alert('title must be more than 5 letters');
+      return;
+    }
     Voat.submit_post(payload).then(function(response) {
       if (!response.data.success) {
         // fail elegantly
-        alert(response.data.data.message);
+        console.log(response);
         return;
       }
       // set focused post
-      $scope.focused_post = response.data.data;
+      $rootScope.focused_post = response.data.data;
       // stop loading
-      $scope.hideLoading();
+      $rootScope.hideLoading();
       // go to submitted post's page
-      $scope.goToPost();
+      $rootScope.history.shift();
+      $rootScope.goToPost();
     });
   }
 
-  $scope.delete = function(type, id) {
+  $rootScope.delete = function(type, id) {
     // start loading spinner
-    $scope.showLoading();
+    $rootScope.showLoading();
     // delete post or comment
     Voat.delete(type, id).then(function(response) {
-      // get first result of matching post or comment
-      entity = $.grep($scope[type], function(e){
-        return e.id == id
-      })[0];
-      // remove from $scope.submissions for live update
-      i = $scope[type].indexOf(entity);
-      $scope[type].splice(i, 1);
+      try {
+        // get first result of matching post or comment
+        entity = $.grep($rootScope[type], function(e){
+          return e.id == id
+        })[0];
+        // remove from $rootScope.submissions for live update
+        i = $rootScope[type].indexOf(entity);
+        $rootScope[type].splice(i, 1);
+      } catch (err) {
+        console.log('cannot simulate live delete')
+      }
+
       // stop loading
-      $scope.hideLoading();
-      if ($scope.onPost() && type == 'submissions') {
-        $scope.togglePostMenu();
+      $rootScope.hideLoading();
+      if ($rootScope.onPost() && type == 'submissions') {
+        $rootScope.togglePostMenu();
         // go back to posts
-        $scope.goToMyAccount();
+        $rootScope.history.shift();
+        $rootScope.goToMyAccount();
       }
     })
   }
 
-  $scope.postComment = function(type) {
+  $rootScope.postComment = function(type) {
     /*
     subverse - subverse to comment on
     post id  - id on post to comment on
     comment  - user's comment
     */
-    subverse = $scope.focused_post.subverse;
-    postId = $scope.focused_post.id;
-    comment = $scope.commentText;
+    subverse = $rootScope.focused_post.subverse;
+    postId = $rootScope.focused_post.id;
+    comment = $rootScope.commentText;
     // comment on post
     Voat.comment(subverse, postId, comment).then(function(resp) {
       if (resp.data.success) {
@@ -431,11 +436,11 @@ angular.module('starter.controllers', [])
         // unfocus comment box
         $('#commentText').blur();
         // add comment to post.comments instead of refreshing
-        if ($scope.comments == 'empty') {
-          $scope.comments = [resp.data.data];
+        if ($rootScope.comments == 'empty') {
+          $rootScope.comments = [resp.data.data];
         }
         else {
-          $scope.comments = $scope.comments.concat([resp.data.data])
+          $rootScope.comments.splice(0, 0, resp.data.data)
         }
       }
       else {
@@ -450,44 +455,44 @@ angular.module('starter.controllers', [])
         }
       }
       // hide loading
-      $scope.hideLoading();
+      $rootScope.hideLoading();
     });
   }
 
-  $scope.comment = function() {
+  $rootScope.comment = function() {
     // start loading icon
-    $scope.showLoading();
-    $scope.postComment('submission');
+    $rootScope.showLoading();
+    $rootScope.postComment('submission');
   }
 
-  $scope.vote = function(type, id, vote) {
-    // get either $scope.posts or $scope.comments
+  $rootScope.vote = function(type, id, vote) {
+    // get either $rootScope.posts or $rootScope.comments
     types = type+'s';
-    desiredList = $scope[types];
+    desiredList = $rootScope[types];
     // create upvote, downvote, and close menu callbacks
-    upVoteFunc = function(i){$scope[types][i].upVotes += vote};
-    downVoteFunc = function(i){$scope[types][i].downVotes -= vote};
+    upVoteFunc = function(i){$rootScope[types][i].upVotes += vote};
+    downVoteFunc = function(i){$rootScope[types][i].downVotes -= vote};
     if (type == 'comment') {
       // if voting on a comment, close the comment menu
       var closeFunc = function(i){$ionicListDelegate.closeOptionButtons()};
     }
     else {
-      if ($scope.onPosts()) {
+      if ($rootScope.onPosts()) {
         // if voting on a post from the front page, close the list post menu
-        var closeFunc = function(i){$scope.submissions[i].hideMenu = !$scope.submissions[i].hideMenu};
+        var closeFunc = function(i){$rootScope.submissions[i].hideMenu = !$rootScope.submissions[i].hideMenu};
       }
       else {
         // if voting on a post from the post's page, close the main post menu
-        var closeFunc = function(i){$scope.togglePostMenu()};
+        var closeFunc = function(i){$rootScope.togglePostMenu()};
       }
     }
     // entity is a alias for post or comment
     entity = $.grep(desiredList, function(e){return e.id == id})[0];
     i = desiredList.indexOf(entity);
+    // close the menu
+    closeFunc(i);
     // vote on the post or comment
     Voat.vote(type, id, vote).then(function(result) {
-      // close the menu
-      closeFunc(i);
       if (result.data == 'token') {
         // if not logged in
         alert('you are not logged in');
@@ -509,10 +514,11 @@ angular.module('starter.controllers', [])
     });
   }
 
-  $scope.save = function(type, id) {
+  $rootScope.save = function(type, id) {
     /*
       save a post or comment
     */
+    $rootScope.closePostMenu();
     Voat.save(type, id).then(function(result){
       if (result.data == 'token') {
         // if not logged in
@@ -523,73 +529,82 @@ angular.module('starter.controllers', [])
     })
   }
 
-  $scope.loadMore = function() {
+  $rootScope.loadMore = function() {
     /*
       load more posts, callback for infinite scrolling
     */
-    $scope.loadingMore = true;
+    $rootScope.loadingMore = true;
     // increment the page index
-    $scope.currentPage += 1;
+    $rootScope.currentPage += 1;
     // get more posts
-    Voat.get_posts($scope.currentSubverse, $scope.currentPage, null).success(function(data) {
+    Voat.get_posts($rootScope.currentSubverse, $rootScope.currentPage, null).success(function(data) {
       // concatenate the new posts to the current ones
-      $scope.submissions = $scope.submissions.concat(data.submissions);
-      /*
-      newSubmissions = $scope.submissions.concat(data.submissions);
-      if (newSubmissions.length > 100) {
-        $scope.submissions = newSubmissions.slice(25, newSubmissions.length);
-      }
-      else {
-        $scope.submissions = newSubmissions;
-      }
-      */
+      $rootScope.submissions = $rootScope.submissions.concat(data.submissions);
+    })
+    .finally(function() {
       // tell angular to stop the loading icon
-      $scope.loadingMore = false;
-      //$scope.$broadcast('scroll.infiniteScrollComplete');
+      $rootScope.loadingMore = false;
     })
   }
 
-  $scope.showOptions = function(id) {
+  $rootScope.showOptions = function(id) {
     /*
       toggle options panel to edit, voat on, etc posts
     */
     $('#'+id).slideToggle();
   }
 
-  $scope.showMenu = function() {
+  $rootScope.showMenu = function() {
     /*
       bring up bottom menu for clicked-on posts,
       display it by clicking the voat logo at the top.
     */
     // don't show the menu if not on a post's comment section
-    if ($scope.onPosts()) {
+    if ($rootScope.onPosts()) {
       var buttons = [
-        {text: 'Submit Post/Link'}
+        {text: 'submit post/link'},
+        {text: 'get recent'},
+        {text: 'get top'}
       ];
+      var custom_opts = {
+        destructiveText: 'go zen'
+      }
       var buttonClicked = function(index) {
         // button clicked callback
         if (index == 0) {
-          // go to submission slide
-          $scope.goToSubmission();
+          if ($rootScope.loggedIn()) {
+            $rootScope.goToState('forward', 'voat.submission')
+            return true;
+            // go to submission slide
+            $rootScope.goToSubmission();
+          }
+          else {
+            alert('Login to submit')
+          }
+        }
+        else if (index == 1) {
+          $rootScope.showLoading();
+          $rootScope.submissions = undefined;
+          $rootScope.hideLoading();
         }
         return true;
       }
     }
-    else if ($scope.onPost()) {
+    else if ($rootScope.onPost()) {
       var buttons = [
-        {text: $scope.focused_post.userName+"'s Profile"},
+        {text: 'view '+$rootScope.focused_post.userName+"'s history"},
       ];
       var buttonClicked = function(index) {
         // button clicked callback
         if (index == 0) {
           // if user clicked `User's Profile` button
           // set focused_user
-          name = $scope.focused_post.userName;
-          $scope.getUserInfo(name, function(user) {
-            $scope.focused_user = user
+          name = $rootScope.focused_post.userName;
+          $rootScope.getUserInfo(name, function(user) {
+            $rootScope.focused_user = user
           });
           // go to account slide
-          $scope.goToAccount();
+          $rootScope.goToAccount();
         }
         return true;
       }
@@ -597,26 +612,28 @@ angular.module('starter.controllers', [])
     else {
       return;
     }
-    // menu configuration
-    var hidesheet = $ionicActionSheet.show({
+    opts = {
       buttons: buttons,
       titleText: 'Voat',
       cancelText: 'cancel',
       cancel: function() {},
       buttonClicked: buttonClicked
-    })
+    }
+
+    // menu configuration
+    var hidesheet = $ionicActionSheet.show(opts)
   }
 
-  $scope.login = function() {
+  $rootScope.login = function() {
     /*
       login to voat
     */
 
     // start loading icon
-    $scope.showLoading();
+    $rootScope.showLoading();
     // get user/pass from input fields
-    user = $('#user').val();
-    pass = $('#pass').val();
+    user = $('#user').val().replace(/ /g,'');
+    pass = $('#pass').val().replace(/ /g,'');
     // make login request
     Voat.login(user, pass).then(function(data) {
       // if access_token is in response
@@ -625,16 +642,16 @@ angular.module('starter.controllers', [])
         window.localStorage['access_token'] = data.access_token;
         window.localStorage['user'] = user;
         window.localStorage['pass'] = pass;
-        $scope.goToSettings();
+        $rootScope.goToSettings();
       }
       else {
         alert('wrong username or password')
       }
-      $scope.hideLoading();
+      $rootScope.hideLoading();
     });
   }
 
-  $scope.logout = function() {
+  $rootScope.logout = function() {
     /*
       logout of voat
     */
@@ -643,122 +660,130 @@ angular.module('starter.controllers', [])
     window.localStorage.removeItem('user');
     window.localStorage.removeItem('pass');
     alert('logged out successfully')
-    $scope.goToSettings();
+    $rootScope.goToSettings();
   }
 
   /*
     boolean functions; primarily used for ng-show/ng-if/ng-switch
   */
 
-  $scope.canRefresh = function() {
+  $rootScope.canRefresh = function() {
     /*
       returns true if on slides that can be refreshed
     */
-    return $scope.onPosts() || $scope.onPost();
+    return $rootScope.onPosts() || $rootScope.onPost();
   }
 
-  $scope.canGoBack = function() {
+  $rootScope.canGoBack = function() {
     /*
       returns true if on slide other than settings and posts
     */
-    return $scope.currentIndex > 1;
+    return $rootScope.currentIndex > 1;
   }
 
-  $scope.canComment = function() {
+  $rootScope.canComment = function() {
     // show button if the user's typed something
-    $scope.commentText = $('#commentText').val();
-    return !(!$scope.commentText);
+    $rootScope.commentText = $('#commentText').val();
+    return !(!$rootScope.commentText);
   }
 
-  $scope.onSettings = function() {
-    return $scope.currentIndex == 0;
+  $rootScope.onSettings = function() {
+    return $state.current.name == 'voat.settings';
   }
 
-  $scope.onPosts = function() {
-    return $scope.currentIndex == 1;
+  $rootScope.onPosts = function() {
+    return $state.current.name == 'voat.posts';
   }
 
-  $scope.onPost = function() {
-    return $scope.currentIndex == 2;
+  $rootScope.onPost = function() {
+    return $state.current.name == 'voat.post';
   }
 
-  $scope.onAccount = function() {
-    return $scope.currentIndex == 3;
+  $rootScope.onAccount = function() {
+    return $state.current.name == 'voat.account';
   }
 
-  $scope.onMyAccount = function() {
+  $rootScope.onMyAccount = function() {
     /*
       return true if logged-in user is the focused_user
     */
-    if ($scope.focused_user) {
-      return window.localStorage['user'] == $scope.focused_user.userName;
+    if ($rootScope.focused_user) {
+      return window.localStorage['user'] == $rootScope.focused_user.userName;
     }
     else {
       return false;
     }
   }
 
-  $scope.onLogin = function() {
-    return $scope.currentIndex == 4;
+  $rootScope.onLogin = function() {
+    return $state.current.name == 'voat.login';
   }
 
-  $scope.onSubmission = function() {
-    return $scope.currentIndex == 5;
+  $rootScope.onSubmission = function() {
+    return $state.current.name == 'voat.submission'
   }
 
-  $scope.loggedIn = function() {
+  $rootScope.loggedIn = function() {
     return window.localStorage['access_token'] != undefined;
   }
 
-  $scope.failIfNotLoggedIn = function() {
-    if (!$scope.loggedIn) {
+  $rootScope.failIfNotLoggedIn = function() {
+    if (!$rootScope.loggedIn) {
       alert('must be logged in to access this feature');
       throw "login error";
     }
   }
 
-  $scope.onMySubmission = function() {
-    return $scope.focused_post.userName == window.localStorage['user'];
+  $rootScope.onMySubmission = function() {
+    return $rootScope.focused_post.userName == window.localStorage['user'];
   }
 
-  $scope.onLinkSubmission = function() {
+  $rootScope.onLinkSubmission = function() {
     return $('#tab_0').hasClass('active');
   }
 
-  $scope.isLink = function() {
-    return $scope.focused_post.url;
+  $rootScope.isLink = function() {
+    return $rootScope.focused_post.url;
+  }
+
+  $rootScope.goToState = function(dir, state, params) {
+    if (!params) {
+      params = {};
+    }
+    $ionicViewSwitcher.nextDirection(dir);
+    $state.go(state, params);
   }
 
   /*
     load functions
   */
 
-  $scope.load_posts = function(load_callback) {
+  $rootScope.load_posts = function(load_callback) {
     /*
-      populate $scope.submissions with voat posts
+      populate $rootScope.submissions with voat posts
     */
 
     // get posts for the current page
-    Voat.get_posts($scope.currentSubverse, $scope.currentPage, null).success(load_callback)
-    $scope.$broadcast('scroll.infiniteScrollComplete');
+    Voat.get_posts($rootScope.currentSubverse, $rootScope.currentPage, null).success(load_callback)
+    $rootScope.$broadcast('scroll.infiniteScrollComplete');
   }
 
-  $scope.searchPosts = function() {
+  $rootScope.searchPosts = function() {
     query = $('#search').val();
     if (!query) {
       return;
     }
-    $scope.submissions = undefined;
-    Voat.get_posts($scope.currentSubverse, 1, query).success($scope.load_posts_callback);
+    $rootScope.submissions = undefined;
+    Voat.get_posts($rootScope.currentSubverse, 1, query).success($rootScope.load_posts_callback);
   }
 
-  $scope.load_comments = function(postId) {
+  $rootScope.load_comments = function(postId) {
     /*
-      populate $scope.comments with voat post comments
+      populate $rootScope.comments with voat post comments
     */
 
     // get comments from specified post
-    Voat.get_comments($scope.currentSubverse, postId).then(function(comments) {
+    Voat.get_comments($rootScope.currentSubverse, postId).then(function(comments) {
       // fill comments list with returned comments
       var ci;
       /*
@@ -784,40 +809,41 @@ angular.module('starter.controllers', [])
           // level is used for the comment's indention
           comments[pi+1].level *= 10;
         }
-        $scope.comments = comments;
+        $rootScope.comments = comments;
       }
       // if there aren't any comments
-      if (!$scope.comments) {
+      if (!$rootScope.comments) {
         // comments is empty; used for ng-switch
-        $scope.comments = 'empty';
+        $rootScope.comments = 'empty';
       }
       // tell angular to stop refresh loading icon
-      $scope.$broadcast('scroll.refreshComplete');
+      $rootScope.$broadcast('scroll.refreshComplete');
     })
   }
 
-  $scope.getVPosts = function(subverse) {
+  $rootScope.getVPosts = function(subverse) {
     /*
-      subverse - string - subverse to get posts from
       get posts from specified subverse
+
+      subverse - string - subverse to get posts from
     */
     // clear the posts list
-    $scope.submissions = undefined;
+    $rootScope.submissions = undefined;
     // update current subverse
-    $scope.currentSubverse = subverse
-    $scope.currentPage = 1;
+    $rootScope.currentSubverse = subverse
+    $rootScope.currentPage = 1;
     // go to posts page
-    $scope.goToPosts();
+    $rootScope.goToPosts('forward');
     // request posts from subverse
-    Voat.get_posts(subverse, $scope.currentPage, null).success(function(data) {
+    Voat.get_posts(subverse, $rootScope.currentPage, null).success(function(data) {
       // overwrite posts list with new posts
-      $scope.submissions = data.submissions;
+      $rootScope.submissions = data.submissions;
       // tell angular to stop refresh loading icon
-      $scope.$broadcast('scroll.refreshComplete');
+      $rootScope.$broadcast('scroll.refreshComplete');
     })
   }
 
-  $scope.enoughPosts = function() {
+  $rootScope.enoughPosts = function() {
     /*
     the infinite reloader will triggers based
     on its position on the page. It auto triggers
@@ -825,108 +851,141 @@ angular.module('starter.controllers', [])
     right beneath the posts. This disables infinite reloader
     if there isn't enough posts
     */
-    return $scope.submissions.length > 7;
+    return $rootScope.submissions.length > 7;
   }
 
   /*
     callback functions
   */
 
-  $scope.buttonRouter = function() {
-    if ($scope.canComment()) {
+  $rootScope.buttonRouter = function() {
+    if ($rootScope.canComment()) {
       return "canComment";
     }
-    else if ($scope.onSettings()) {
+    else if ($rootScope.onSettings()) {
       return "onSettings";
     }
   }
 
-  $scope.toggleEdit = function() {
-    $scope.isediting = !$scope.isediting;
+  $rootScope.toggleEdit = function() {
+    $rootScope.isediting = !$rootScope.isediting;
   }
 
-  $scope.toggleCommentMenu = function(comment) {
+  $rootScope.toggleCommentMenu = function(comment) {
     if (comment.isEditing) {
       return false;
     }
     return !comment.hideMenu;
   }
 
-  $scope.toggleCommentEdit = function(comment) {
+  $rootScope.toggleCommentEdit = function(comment) {
     comment.isEditing = true;
   }
 
-  $scope.getRowCount = function(s) {
+  $rootScope.getRowCount = function(s) {
     return (s.match(/(\n\r|\n|\r)/g) || [1,2]).length
   }
 
-  $scope.edit = function(type, id) {
+  $rootScope.edit = function(type, id) {
     /*
       edit existing post or comment
     */
-    $scope.showLoading();
+    $rootScope.showLoading();
     // get the edited comment
     selector = type.replace(/(\w)/, function(m){return m.toUpperCase()}).replace(/s$/, '');
     if (type == 'comments') {
       selector += '_'+id;
     }
     else {
-      $scope.toggleEdit();
-      $scope.togglePostMenu();
+      $rootScope.toggleEdit();
+      $rootScope.togglePostMenu();
     }
     content = $('#edited'+selector).val()
     Voat.edit(type, id, content).then(function(result) {
-      entity = $.grep($scope[type], function(e){
+      entity = $.grep($rootScope[type], function(e){
         return e.id == id
       })[0];
-      i = $scope[type].indexOf(entity);
+      i = $rootScope[type].indexOf(entity);
       if (i > -1) {
-        $scope[type][i].formattedContent = result.data.data.formattedContent;
-        $scope[type][i].content = result.data.data.content;
+        $rootScope[type][i].formattedContent = result.data.data.formattedContent;
+        $rootScope[type][i].content = result.data.data.content;
         if (type == 'comments') {
-          $scope[type][i].isEditing = false;
+          $rootScope[type][i].isEditing = false;
         }
       }
       else {
-        $scope.focused_post.formattedContent = result.data.data.formattedContent;
-        $scope.focused_post.content = result.data.data.content;
+        $rootScope.focused_post.formattedContent = result.data.data.formattedContent;
+        $rootScope.focused_post.content = result.data.data.content;
       }
-      $scope.hideLoading();
+      $rootScope.hideLoading();
     })
   }
 
-  $scope.manageSlides = function(i) {
-    /*
-      callback when slide is changed
-    */
-
-    // quick dirty fix to hide history button on start up
-    $('#historyButton').removeAttr('hidden');
-    // update index tracker
-    $scope.previousIndex = $scope.currentIndex;
-    $scope.currentIndex = i;
-    // lets angular know the slide has changed in index and/or length
-    //$ionicSlideBoxDelegate.update();
-    // tell angular to resize the slide to accomodate new slide
-    //$ionicScrollDelegate.resize();
-    if ($scope.previousIndex == 2) {
-      $scope.comments = undefined;
-      $scope.commentText = '';
-      $scope.closePostMenu();
+  $rootScope.shouldScrollTop = function(comingFrom, goingTo) {
+    //console.log('coming from '+comingFrom+', going to '+goingTo);
+    if (comingFrom == 'voat.post' && goingTo == 'voat.posts') {
+      return false;
     }
-    else if ($scope.currentIndex == 1) {
-      $scope.closePostMenu();
-    }
-    else if ($scope.previousIndex == 3) {
-      $scope.currentAccountTab = 0;
-      console.log($scope.focused_post.userName)
-      console.log(window.localStorage['user'])
-    }
-    //$cordovaKeyboard.show()
-
+    return true;
   }
 
-  $scope.getUserName = function() {
+  $rootScope.$on('$stateChangeError', function(evt, state, toParams, previousState, fromParams) {
+    $rootScope.goToState('forward', 'voat.posts');
+  })
+
+  $rootScope.$on('$stateChangeStart', function(evt, state, toParams, previousState, fromParams) {
+    /*
+      callback when state is changed
+    */
+    if ($rootScope.lastChange == [state.name, previousState.name]) {
+      alert('ping')
+      evt.preventDefault();
+      return;
+    }
+    $rootScope.lastChange = [state.name, previousState.name]
+    $rootScope.cancelRequests();
+    if ($rootScope.shouldScrollTop(state.name, previousState.name)) {
+      $ionicScrollDelegate.scrollTop();
+    }
+
+  })
+
+  $rootScope.clearPost = function() {
+    $rootScope.comments = undefined;
+    $rootScope.focused_post = undefined;
+    $rootScope.commentText = '';
+    $rootScope.closePostMenu();
+  }
+
+  $rootScope.$on('$stateChangeSuccess', function(evt, state, toParams, previousState, fromParams) {
+    /*
+      callback when state is changed
+    */
+
+    // prevents this event from being triggered twice
+    if ($rootScope.history[0] == previousState.name) {
+      evt.preventDefault();
+      return;
+    }
+
+    // update history
+    if (!toParams.goingBack) {
+      $rootScope.history.splice(0, 0, previousState.name);
+    }
+
+    if (previousState.name == 'voat.post' && state.name != 'voat.account') {
+      $rootScope.clearPost();
+    }
+
+    if (state.name == 'voat.posts') {
+      $rootScope.closePostMenu();
+      if (!$rootScope.isRequesting && !$rootScope.submissions) {
+        $rootScope.refresh();
+      }
+    }
+  })
+
+  $rootScope.getUserName = function() {
     return window.localStorage['user'];
   }
 
@@ -934,7 +993,7 @@ angular.module('starter.controllers', [])
     open post functions
   */
 
-  $scope.goToLink = function(post) {
+  $rootScope.goToLink = function(post) {
     /*
       if user clicked thumbnail, take them directly to link
     */
@@ -945,13 +1004,11 @@ angular.module('starter.controllers', [])
     if (post.url) {
       // open link in the app browser
       $cordovaInAppBrowser.open(post.url, '_blank');
-      if ($scope.onPost()) {
-        $scope.togglePostMenu();
-      }
+      $rootScope.closePostMenu();
     }
-    else if (!$scope.onPost()) {
+    else {
       // open comments page
-      $scope.focus_on(post);
+      $rootScope.goToPost(post);
     }
   }
 
@@ -959,13 +1016,13 @@ angular.module('starter.controllers', [])
     loading functions
   */
 
-  $scope.showLoading = function() {
+  $rootScope.showLoading = function() {
     $ionicLoading.show({
       template: '<ion-spinner class="ios"></ion-spinner>'
     });
   }
 
-  $scope.hideLoading = function() {
+  $rootScope.hideLoading = function() {
     $ionicLoading.hide();
   }
 
@@ -973,50 +1030,34 @@ angular.module('starter.controllers', [])
   focus functions (changes the current focus or state)
   */
 
-  $scope.openPostComments = function(post) {
+  $rootScope.openPostComments = function(post) {
     /*
     brings up the comment page of any post
     */
+
     if (post.content) {
       post.content = post.content.replace(/(\r\n|\n|\r){2,}/gm,"\n\n")
     }
-    $scope.focused_post = post
-    $scope.load_comments(post.id);
-    if ($scope.onPosts() || $scope.onAccount()) {
-      $scope.cachedScroll = $ionicScrollDelegate.getScrollPosition().top;
-      $scope.goToPost();
-    }
-    $ionicNavBarDelegate.showBackButton(true)
-    $ionicScrollDelegate.scrollTop();
+    $rootScope.focused_post = post
+    $rootScope.load_comments(post.id);
   }
 
-  $scope.focus_on = function(post) {
-    /*
-    focus_on gets called before openPostComments because
-    it tries to open up a potential image/video without comments.
-    If the post is entirely text or if a particular part of the
-    post was clicked, it calls openPostComments.
-    */
-    // open comments page
-    $scope.openPostComments(post);
+  $rootScope.goToPosts = function(dir) {
+    $rootScope.goToState(dir, 'voat.posts');
   }
 
   /*
   utility functions
   */
 
-  $scope.load_posts_callback = function(data) {
-    // disable sliding, buttons should trigger sliding only
-    $ionicSlideBoxDelegate.enableSlide(false);
-    // show the buttons on the header panel
-    $ionicNavBarDelegate.showBackButton(true);
+  $rootScope.load_posts_callback = function(data) {
     // overwrite posts with new posts
-    $scope.submissions = data.submissions;
+    $rootScope.submissions = data.submissions;
     // tell angular to hide refresh loading icon
-    $scope.$broadcast('scroll.refreshComplete');
+    $rootScope.$broadcast('scroll.refreshComplete');
   }
 
-  $scope.timeDiff = function(previous_timestamp) {
+  $rootScope.timeDiff = function(previous_timestamp) {
     /*
     takes a timestamp and returns an X unit ago
     */
@@ -1056,29 +1097,4 @@ angular.module('starter.controllers', [])
     });
     */
   });
-})
-
-.controller('ChatsCtrl', function($scope, Chats) {
-  // With the new view caching in Ionic, Controllers are only called
-  // when they are recreated or on app start, instead of every page change.
-  // To listen for when this page is active (for example, to refresh data),
-  // listen for the $ionicView.enter event:
-  //
-  //$scope.$on('$ionicView.enter', function(e) {
-  //});
-
-  $scope.chats = Chats.all();
-  $scope.remove = function(chat) {
-    Chats.remove(chat);
-  }
-})
-
-.controller('ChatDetailCtrl', function($scope, $stateParams, Chats) {
-  $scope.chat = Chats.get($stateParams.chatId);
-})
-
-.controller('AccountCtrl', function($scope) {
-  $scope.settings = {
-    enableFriends: true
-  };
 });

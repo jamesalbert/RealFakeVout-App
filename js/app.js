@@ -53,11 +53,7 @@ angular.module('starter', ['ionic', 'dcbImgFallback', 'starter.controllers', 'st
   };
 })
 
-.config(['$sceDelegateProvider', function($sceDelegateProvider) {
-  $sceDelegateProvider.resourceUrlWhitelist(['self', 'http://fakevout.azurewebsites.net/api/v1/**']);
-}])
-
-.config(function($stateProvider, $urlRouterProvider, $cordovaInAppBrowserProvider, $cordovaAppRateProvider) {
+.config(function($stateProvider, $httpProvider, $urlRouterProvider, $cordovaInAppBrowserProvider, $cordovaAppRateProvider) {
   document.addEventListener("deviceready", function () {
     var defaultOptions = {
       location: 'yes',
@@ -83,54 +79,75 @@ angular.module('starter', ['ionic', 'dcbImgFallback', 'starter.controllers', 'st
   $stateProvider
 
   // setup an abstract state for the tabs directive
-    .state('tab', {
-    url: "/tab",
+  .state('voat', {
+    url: "/voat",
     abstract: true,
     templateUrl: "templates/tabs.html"
   })
 
   // Each tab has its own nav history stack:
 
-  .state('tab.dash', {
-    url: '/dash',
+  .state('voat.posts', {
+    url: '/posts?goingBack',
     views: {
-      'tab-dash': {
-        templateUrl: 'templates/tab-dash.html',
-        controller: 'DashCtrl'
+      'voat-posts': {
+        templateUrl: 'templates/voat.html',
+        controller: 'VoatCtrl'
       }
     }
   })
 
-  .state('tab.chats', {
-      url: '/chats',
-      views: {
-        'tab-chats': {
-          templateUrl: 'templates/tab-chats.html',
-          controller: 'ChatsCtrl'
-        }
-      }
-    })
-    .state('tab.chat-detail', {
-      url: '/chats/:chatId',
-      views: {
-        'tab-chats': {
-          templateUrl: 'templates/chat-detail.html',
-          controller: 'ChatDetailCtrl'
-        }
-      }
-    })
-
-  .state('tab.account', {
-    url: '/account',
+  .state('voat.post', {
+    url: '/post?goingBack',
     views: {
-      'tab-account': {
-        templateUrl: 'templates/tab-account.html',
-        controller: 'AccountCtrl'
+      'voat-post': {
+        templateUrl: 'templates/voat-post.html',
+        controller: 'VoatCtrl'
+      }
+    }
+  })
+
+  .state('voat.settings', {
+    url: '/settings?goingBack',
+    views: {
+      'voat-settings': {
+        templateUrl: 'templates/voat-settings.html',
+        controller: 'VoatCtrl'
+      }
+    }
+  })
+
+  .state('voat.account', {
+    url: '/account?goingBack',
+    views: {
+      'voat-account': {
+        templateUrl: 'templates/voat-account.html',
+        controller: 'VoatCtrl'
+      }
+    }
+  })
+
+  .state('voat.login', {
+    url: '/login?goingBack',
+    views: {
+      'voat-login': {
+        templateUrl: 'templates/voat-login.html',
+        controller: 'VoatCtrl'
+      }
+    }
+  })
+
+  .state('voat.submission', {
+    url: '/submission?goingBack',
+    views: {
+      'voat-submission': {
+        templateUrl: 'templates/voat-submission.html',
+        controller: 'VoatCtrl'
       }
     }
   });
 
   // if none of the above states are matched, use this as the fallback
-  $urlRouterProvider.otherwise('/tab/dash');
+  $urlRouterProvider.otherwise('/voat/posts');
 
 });

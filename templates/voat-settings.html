@@ -1,0 +1,28 @@
+<ion-view view-title="Settings">
+  <ion-header-bar no-tap-scroll="true" align-title="center" class="bar-light">
+    <div class="buttons">
+    </div>
+    <h1 class="title"><img ng-click="showMenu()" src="img/voat-logo.png"></img></h1>
+    <div class="buttons">
+    </div>
+  </ion-header-bar>
+  <ion-content>
+    <ion-list>
+      <ion-item ng-click="goToMyAccount()" style="border-style: dotted !important; border-radius: 0px 1px 1px 0px !important" class="item-icon-left">
+        <i class="icon ion-ios-person"></i>
+        <h2>Account</h2>
+      </ion-item>
+      <div class="item item-divider"><small><b> subverses</b></small></div>
+      <ion-item style="border-style: dotted !important; border-radius: 0px 1px 1px 0px !important" ng-click="getVPosts('_default')" class="item item-icon-left item-icon-right">
+        <i class="icon ion-bookmark"></i>
+        <h2>Default</h2>
+        <i class="icon ion-ios-arrow-right"></i>
+      </ion-item>
+      <ion-item style="border-style: dotted !important; border-radius: 0px 1px 1px 0px !important" ng-repeat="subverse in subverses" ng-click="getVPosts(subverse)" class="item item-icon-left item-icon-right">
+        <i class="icon ion-bookmark"></i>
+        <h2>{{ subverse }}</h2>
+        <i class="icon ion-ios-arrow-right"></i>
+      </ion-item>
+    </ion-list>
+  </ion-content>
+</ion-view>

@@ -30,12 +30,16 @@
     };
     String.prototype.repeat = function( num ){
         return new Array( num + 1 ).join( this );
-    }
+    };
+    String.prototype.startsWith = function (str){
+      return this.slice(0, str.length) == str;
+    };
+    String.prototype.endsWith = function (str){
+      return this.slice(-str.length) == str;
+    };
     </script>
     <script src="js/sprintf.js"></script>
     <script src="js/angular-sprintf.js"></script>
-    <script src="js/react.js"></script>
-    <script src="js/ngReact.js"></script>
     <script src="js/app.js"></script>
     <script src="js/controllers.js"></script>
     <script src="js/services.js"></script>

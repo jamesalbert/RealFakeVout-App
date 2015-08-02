@@ -1,0 +1,47 @@
+<ion-view view-title="Template">
+  <ion-header-bar no-tap-scroll="true" align-title="center" class="bar-light">
+    <div class="buttons">
+      <!--<button class="button button-clear button-dark" on-release="goToPosts('back');"><i class="ion-ios-arrow-back"></i> Back</button>-->
+      <button class="button button-clear button-dark" on-release="goBack();"><i class="ion-ios-arrow-back"></i> Back</button>
+    </div>
+    <h1 class="title"><img ng-click="showMenu()" src="img/voat-logo.png"></img></h1>
+    <div class="buttons">
+    </div>
+  </ion-header-bar>
+  <div class="tabs-striped tabs-top tabs-background-royal tabs-color-light">
+    <div class="tabs">
+      <a on-tap="updateSubmissionTabs(0)" id="tab_0" class="tab-item active">
+        <i class="icon ion-link"></i>
+        Link
+      </a>
+      <a on-tap="updateSubmissionTabs(1)" id="tab_1" class="tab-item">
+        <i class="icon ion-document-text"></i>
+        Self
+      </a>
+    </div>
+  </div>
+  <ion-content>
+    <br><br>
+    <div class="list">
+      <label class="item item-input item-floating-label">
+        <span class="input-label">Title</span>
+        <input type="text" id="title" placeholder="Title">
+      </label>
+      <label class="item item-input item-floating-label">
+        <span class="input-label">Subverse</span>
+        <input type="text" id="subverse" placeholder="Subverse" value="{{currentSubverse}}">
+      </label>
+      <label ng-show="onLinkSubmission()" class="item item-input item-floating-label">
+        <span class="input-label">Link</span>
+        <input type="text" id="link" placeholder="Link">
+      </label>
+      <label ng-show="!onLinkSubmission()" class="item item-input item-floating-label">
+        <span class="input-label">Content</span>
+        <input type="text" id="content" placeholder="Content">
+      </label>
+      <button ng-click="submitPost()" class="button button-block button-royal">
+        Submit to Voat
+      </button>
+    </div>
+  </ion-content>
+</ion-view>

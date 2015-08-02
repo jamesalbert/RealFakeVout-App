@@ -1,0 +1,155 @@
+<ion-view view-title="Template">
+  <ion-header-bar no-tap-scroll="true" align-title="center" class="bar-light">
+    <div class="buttons">
+      <!--
+      <div ng-if="onMyAccount()">
+        <button class="button button-clear button-dark" on-release="goToSettings();"><i class="ion-ios-arrow-back"></i> Back</button>
+      </div>
+      <div ng-if="onAccount() && !onMyAccount()">
+        <button class="button button-clear button-dark" on-release="goToPost();"><i class="ion-ios-arrow-back"></i> Back</button>
+      </div>
+    -->
+      <button class="button button-clear button-dark" on-release="goBack();"><i class="ion-ios-arrow-back"></i> Back</button>
+    </div>
+    <h1 class="title"><img ng-click="showMenu()" src="img/voat-logo.png"></img></h1>
+    <div class="buttons">
+    </div>
+  </ion-header-bar>
+  <div ng-if="onAccount()">
+    <div class="tabs-striped tabs-top tabs-background-royal tabs-color-light">
+      <div class="tabs">
+        <a ng-click="updateAccountTabs(0)" id="tab_0" class="tab-item active" href="#">
+          <i class="icon ion-ios-paperplane"></i>
+          Submissions
+        </a>
+        <a ng-click="updateAccountTabs(1)" id="tab_1" class="tab-item" href="#">
+          <i class="icon ion-document-text"></i>
+          Comments
+        </a>
+        <div ng-if="loggedIn() && onMyAccount()"
+        <a ng-click="updateAccountTabs(2)" id="tab_2" class="tab-item" href="#">
+          <i class="icon ion-email"></i>
+          Messages
+        </a>
+      </div>
+    </div>
+  </div>
+  <ion-content>
+    <br><br><br>
+    <div ng-switch on="focused_user">
+      <div ng-switch-when="undefined">
+        <div class="row">
+          <span class="badge badge-royal col">loading account</span>
+        </div>
+        <div class="row">
+          <span class="col"></span>
+          <span class="col"></span>
+          <span class="col"></span>
+          <span class="col"><ion-spinner icon="ios"></ion-spinner></span>
+          <span class="col"></span>
+          <span class="col"></span>
+          <span class="col"></span>
+        </div>
+      </div>
+      <div ng-switch-default>
+        <ion-list>
+          <ion-item style="border-style: dotted !important; border-radius: 0px 1px 1px 0px !important" class="item item-avatar item-text-wrap">
+            <img ng-src="{{focused_user.profilePicture}}"></img>
+            <h2>{{focused_user.userName}} <u>{{focused_user.submissionPoints.sum}}</u> | <u>{{focused_user.commentPoints.sum}}</u></h2>
+          </ion-item>
+          <div class="item item-divider">
+            <p>registered {{timeDiff(focused_user.registrationDate)}}</p>
+            <button ng-click="logout()" ng-show="onMyAccount()" class="button button-block button-royal">
+              Logout
+            </button>
+          </div>
+          <div ng-switch on="userItems">
+            <div ng-switch-when="undefined">
+              <div class="row">
+                <span class="badge badge-royal col">loading</span>
+              </div>
+              <div class="row">
+                <span class="col"></span>
+                <span class="col"></span>
+                <span class="col"></span>
+                <span class="col"><ion-spinner icon="ios"></ion-spinner></span>
+                <span class="col"></span>
+                <span class="col"></span>
+                <span class="col"></span>
+              </div>
+            </div>
+            <div ng-switch-when="empty">
+              <div class="row">
+                <span class="badge badge-royal col">nothing to see here</span>
+              </div>
+            </div>
+            <div ng-switch-default>
+              <div ng-if="currentAccountTab == 0">
+                <ion-item ng-repeat="userItem in userItems" on-hold="userItem.hideMenu = !userItem.hideMenu" style="border-style: dotted !important; border-radius: 0px 1px 1px 0px !important" class="item-text-wrap item-text-inset item-avatar item-icon-right">
+                    <img ng-click="goToLink(userItem);" ng-src="{{userItem.thumbnail}}" err-src="img/voat-goat.png">
+                    <div ng-click="goToPost(userItem);">
+                      <div ng-switch on="userItem.title">
+                        <div ng-switch-default>
+                          <h2 style="max-width: 200px; word-wrap:break-word;">{{userItem.title}}</h2>
+                          <i class="badge badge-royal">{{userItem.commentCount}}</i>
+                        </div>
+                      </div>
+                      <p><i style="font-size: 12px; color: #8870ff;">{{userItem.subverse}}</i> &sdot;
+                         <b>{{userItem.userName}}</b>
+                         </p>
+                         <p>
+                           {{timeDiff(userItem.date)}} &sdot;
+                           <b style="color: #4aabe7;">{{userItem.upVotes}}</b> &int; <b style="color: #8870ff;">{{userItem.downVotes}}</b> &int;
+                           {{userItem.upVotes - userItem.downVotes}}
+                         </p>
+                    </div>
+                    <div style="border: 0px;" ng-hide="!userItem.hideMenu || !loggedIn()" class="item item-text-center center item-animate">
+                      <div id="{{userItem.id}}" class="center row">
+                        <i ng-click="save('submissions', {{userItem.id}})" class="ion-android-star-outline col"></i>
+                        <!--
+                        <i ng-click="hide('submissions', {{post.id}})" class="ion-eye-disabled col col-20"></i>
+                        <i ng-click="report('submissions', {{post.id}})" class="ion-alert-circled col col-20"></i>
+                        -->
+                        <i ng-click="vote('submission', {{userItem.id}}, 1)" class="ion-arrow-up-a col"></i>
+                        <i ng-click="vote('submission', {{userItem.id}}, -1)" class="ion-arrow-down-a col"></i>
+                      </div>
+                    </div>
+                </ion-item>
+              </div>
+              <div ng-if="currentAccountTab == 1">
+                <ion-item on-tap="userItem.hideMenu = !userItem.hideMenu" style="border-style: dotted !important; border-radius: 0px 1px 1px 0px !important" ng-repeat="userItem in userItems" class="item-remove-animate item-text-left item-text-wrap">
+                   <b>{{userItem.userName}}</b> &sdot; <i>{{timeDiff(userItem.date)}}</i> &sdot;
+                   <b style="color: #4aabe7;">{{userItem.upVotes}}</b> &int; <b style="color: #8870ff;">{{userItem.downVotes}}</b> &int;
+                   {{userItem.upVotes - userItem.downVotes}}</p>
+                  <p ng-bind-html="userItem.formattedContent"></p>
+                  <div style="border: 0px;" ng-hide="!userItem.hideMenu || !loggedIn()" class="item item-text-center center item-animate">
+                    <br>
+                    <div id="{{userItem.id}}" class="row">
+                      <i ng-click="goToContext(userItem.id, userItem.submissionID)" class="ion-ios-list col"></i>
+                      <!--
+                      <i ng-click="hide('comments', {{comment.id}})" class="ion-eye-disabled col col-20"></i>
+                      <i ng-click="report('comments', {{comment.id}})" class="ion-alert-circled col col-20"></i>
+                      -->
+                      <i ng-click="vote('comment', {{userItem.id}}, 1)" class="ion-arrow-up-a col"></i>
+                      <i ng-click="vote('comment', {{userItem.id}}, -1)" class="ion-arrow-down-a col"></i>
+                    </div>
+                  </div>
+                </ion-item>
+              </div>
+              <div ng-if="currentAccountTab == 2">
+                <ion-item ng-click="userItem.showMenu = true" style="border-style: dotted !important; border-radius: 0px 1px 1px 0px !important" ng-repeat="userItem in userItems" class="item-remove-animate item-text-left item-text-wrap">
+                   <b>{{userItem.sender}}</b> <i>{{timeDiff(userItem.sentDate)}}</i></p>
+                   <p ng-bind-html="userItem.formattedContent"></p>
+                   <div style="border: 0px;" ng-show="userItem.showMenu" class="item item-text-center center item-animate">
+                     <textarea autofocus rows="5" id="message_{{userItem.id}}" style="resize: none; width: 100%"></textarea>
+                     <button class="button button-small button-block button-outline button-royal" on-tap="replyToMessage(userItem);">send</button>
+                   </div>
+                </ion-item>
+              </div>
+            </div>
+          </div>
+        </ion-list>
+      </div>
+    </div>
+  </ion-content>
+</ion-view>

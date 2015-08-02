@@ -4,17 +4,19 @@ angular.module('starter.services', [])
   return {request: $q.defer()};
 })
 
-.factory('Voat', function($http, cancel) {
+.factory('Voat', function($http, $rootScope, cancel) {
   //cancel.request.resolve('make way gentlemen');
   var ip = 'https://relurk.com';
   return {
     get_posts: function(subverse, page, search) {
-      console.log('loading posts...'+arguments.callee.caller);
-      url = ip+'/api/posts/'+subverse+'/'+page;
-      if (search) {
-        url += '/'+search;
+      console.log('loading posts...');
+      $rootScope.$broadcast('loading:progress');
+      url = ip+'/api/posts/'+subverse+'/'+page+'/'+search;
+      req = {
+        url: url,
+        timeout: cancel.request.promise
       }
-      return $http.get(url, {timeout: cancel.request.promise})
+      return $http(req)
                   .success(function(data) {
                     return data.submissions;
                   })
@@ -25,7 +27,11 @@ angular.module('starter.services', [])
       get_post: function(id) {
         console.log('loading post...');
         url = ip+'/api/post/'+id;
-        return $http.get(url, {timeout: cancel.request.promise})
+        req = {
+          url: url,
+          timeout: cancel.request.promise
+        }
+        return $http(req)
                     .success(function(data) {
                       return data.submission;
                     })
@@ -34,6 +40,168 @@ angular.module('starter.services', [])
                     })
         },
     get_subverses: function() {
+      return [
+        "Api",
+        "AskFakeVout",
+        "playground",
+        "Universall",
+        "Test",
+        "Anon",
+        "funnystuff",
+        "VOAT",
+        "MinCCP",
+        "Private",
+        "nsfw",
+        "announcements",
+        "FirstLetterRed",
+        "DogeTipRobot",
+        "UpVoat",
+        "fuerve",
+        "metang800",
+        "Luk3",
+        "jordanarydev",
+        "dogecoin",
+        "Fakevout",
+        "fatpeoplehate",
+        "NotDisliked",
+        "squ1dland",
+        "QuantumWannabe",
+        "nascar",
+        "Neilv",
+        "No",
+        "Nonillion",
+        "Mateon1",
+        "Jotboard",
+        "kingemocut",
+        "KJ4TIP",
+        "Krutonium",
+        "KyuBotTest",
+        "Leonelf",
+        "lisbot",
+        "gatorstestaccount",
+        "geckoTier",
+        "ggbnny",
+        "girlswearingvs",
+        "GK",
+        "goatherd",
+        "goatreader",
+        "GunOfSod",
+        "healdb",
+        "hkr8",
+        "human",
+        "humansbeingbros",
+        "itsmatt",
+        "iVoater",
+        "jabza",
+        "Jawnnypoo",
+        "Jayden",
+        "jcharv",
+        "jerv",
+        "johnska7",
+        "FFXIV",
+        "FirstLetterBig",
+        "dogecointesting",
+        "dogesmithtest",
+        "frame11",
+        "frontpage",
+        "DonDavio",
+        "donkeypie",
+        "doomrah",
+        "DtheZombie",
+        "edgymurphy",
+        "ells1231",
+        "Euphoric",
+        "EVE",
+        "Arkells",
+        "0fux",
+        "404",
+        "51rH0n3y84d93r",
+        "AdamTheBuizel",
+        "admin",
+        "akuta",
+        "andromeda5e",
+        "assguardian",
+        "balmanator",
+        "bd452",
+        "bot",
+        "bottest",
+        "Bugs",
+        "Cake",
+        "CassiekinTestbed",
+        "chubs",
+        "cillroy",
+        "CoatTest",
+        "dankestmemerinos",
+        "dcistestingthings",
+        "rch",
+        "RealNigzOnly",
+        "redchanit",
+        "RickyContra",
+        "roboreuters",
+        "RunningShoes",
+        "runswithscissors",
+        "ryan",
+        "Scaarus",
+        "schwiz",
+        "SCP",
+        "SexyBleach",
+        "ShinsekaiYori",
+        "Siege",
+        "sjwcoin",
+        "spacedicks",
+        "Spunky",
+        "storr",
+        "subverserequest",
+        "synnyster",
+        "tehyosh",
+        "termosapi",
+        "projectgoatalot",
+        "PurpleGoat",
+        "PutinLovesCats",
+        "PuttItOutPlease",
+        "PythonisFun",
+        "nulldev",
+        "OldPeopleThings",
+        "Ooer",
+        "oranges13",
+        "phroa",
+        "piratenaapje2",
+        "Pnoexz",
+        "pondnetic",
+        "poop",
+        "mydickismassive",
+        "n60storm4",
+        "VulcanBy123",
+        "watersnake",
+        "whatever",
+        "woofcat",
+        "X0x5F0x5F05xF05xF5FX",
+        "XvvvvvX",
+        "Xyrann",
+        "yayamateurs",
+        "yee",
+        "Yes",
+        "zeonin",
+        "vanin",
+        "varNinja",
+        "veuwer",
+        "viralstories",
+        "Voater4iOS",
+        "volcanodev",
+        "test2",
+        "testbot",
+        "testpwr",
+        "theultimat",
+        "thisisbot",
+        "tlam",
+        "Towelie",
+        "Trimth",
+        "TypograDark",
+        "TysonMcNeal",
+        "undone",
+        "vulcan"
+      ]
+      /*
       return [
         "newsubverses",
         "introductions",
@@ -62,11 +230,18 @@ angular.module('starter.services', [])
         "subverserequest",
         "whatever",
         "IAMA"
-      ]
+      ]*/
     },
     get_user: function(user, type) {
       console.log('loading user...');
-      return $http.get(ip+'/api/user/'+user+'/'+type, {timeout: cancel.request.promise})
+      url = ip+'/api/user/'+user+'/'+type
+      req = {
+        url: url
+      }
+      if (type != 'info') {
+        req.timeout = cancel.request.promise;
+      }
+      return $http(req)
                   .then(function(result) {
                     return result.data;
                   })
@@ -93,10 +268,12 @@ angular.module('starter.services', [])
         url: ip+'/api/comment',
         method: 'POST',
         data: {
-          token: window.localStorage['access_token'],
           subverse: subverse,
           postId: postId,
           comment: comment
+        },
+        headers: {
+          Authorization: window.localStorage['access_token']
         }
       }
       return $http(req)
@@ -110,11 +287,13 @@ angular.module('starter.services', [])
         url: ip+'/api/reply/comment',
         method: 'POST',
         data: {
-          token: window.localStorage['access_token'],
           subverse: subverse,
-          subId: subId,
+          postId: subId,
           commentId: commentId,
-          value: value
+          content: value
+        },
+        headers: {
+          Authorization: window.localStorage['access_token']
         }
       }
       return $http(req)
@@ -128,9 +307,11 @@ angular.module('starter.services', [])
         url: ip+'/api/reply/message',
         method: 'POST',
         data: {
-          token: window.localStorage['access_token'],
           id: id,
-          value: value
+          content: value
+        },
+        headers: {
+          Authorization: window.localStorage['access_token']
         }
       }
       return $http(req)
@@ -145,9 +326,11 @@ angular.module('starter.services', [])
         url: ip+'/api/delete',
         method: 'DELETE',
         data: {
-          token: window.localStorage['access_token'],
           type: type,
           id: id
+        },
+        headers: {
+          Authorization: window.localStorage['access_token']
         }
       }
       return $http(req)
@@ -161,10 +344,12 @@ angular.module('starter.services', [])
         url: ip+'/api/edit',
         method: 'PUT',
         data: {
-          token: window.localStorage['access_token'],
           type: type,
           id: id,
           content: content
+        },
+        headers: {
+          Authorization: window.localStorage['access_token']
         }
       }
       return $http(req)
@@ -174,11 +359,13 @@ angular.module('starter.services', [])
     },
     submit_post: function(payload) {
       console.log('submitting...');
-      payload.token = window.localStorage['access_token']
       req = {
         url: ip+'/api/post',
         method: 'POST',
-        data: payload
+        data: payload,
+        headers: {
+          Authorization: window.localStorage['access_token']
+        }
       }
       return $http(req)
               .then(function(result) {
@@ -191,10 +378,12 @@ angular.module('starter.services', [])
         url: ip+'/api/vote',
         method: 'POST',
         data: {
-          token: window.localStorage['access_token'],
           type: type,
           id: id,
           vote: vote
+        },
+        headers: {
+          Authorization: window.localStorage['access_token']
         }
       }
       return $http(req)
@@ -206,8 +395,12 @@ angular.module('starter.services', [])
       console.log('loading messages...');
       token = window.localStorage['access_token'];
       req = {
-        url: ip+'/api/messages/'+token+'/'+type+'/'+state,
-        method: 'GET'
+        url: ip+'/api/messages/'+type+'/'+state,
+        method: 'GET',
+        timeout: cancel.request.promise,
+        headers: {
+          Authorization: token
+        }
       }
       return $http(req)
               .then(function(result) {
@@ -221,9 +414,11 @@ angular.module('starter.services', [])
         url: ip+'/api/save',
         method: 'POST',
         data: {
-          token: window.localStorage['access_token'],
           type: type,
           id: id
+        },
+        headers: {
+          Authorization: window.localStorage['access_token']
         }
       }
       return $http(req)
@@ -238,53 +433,4 @@ angular.module('starter.services', [])
                     return result.data.comments;
                   })
     }};
-})
-
-.factory('Chats', function() {
-  // Might use a resource here that returns a JSON array
-
-  // Some fake testing data
-  var chats = [{
-    id: 0,
-    name: 'Ben Sparrow',
-    lastText: 'You on your way?',
-    face: 'https://pbs.twimg.com/profile_images/514549811765211136/9SgAuHeY.png'
-  }, {
-    id: 1,
-    name: 'Max Lynx',
-    lastText: 'Hey, it\'s me',
-    face: 'https://avatars3.githubusercontent.com/u/11214?v=3&s=460'
-  },{
-    id: 2,
-    name: 'Adam Bradleyson',
-    lastText: 'I should buy a boat',
-    face: 'https://pbs.twimg.com/profile_images/479090794058379264/84TKj_qa.jpeg'
-  }, {
-    id: 3,
-    face: 'https://pbs.twimg.com/profile_images/598205061232103424/3j5HUXMY.png',
-    name: 'Perry Governor',
-    lastText: 'Look at my mukluks!',
-  }, {
-    id: 4,
-    name: 'Mike Harrington',
-    lastText: 'This is wicked good ice cream.',
-    face: 'https://pbs.twimg.com/profile_images/578237281384841216/R3ae1n61.png'
-  }];
-
-  return {
-    all: function() {
-      return chats;
-    },
-    remove: function(chat) {
-      chats.splice(chats.indexOf(chat), 1);
-    },
-    get: function(chatId) {
-      for (var i = 0; i < chats.length; i++) {
-        if (chats[i].id === parseInt(chatId)) {
-          return chats[i];
-        }
-      }
-      return null;
-    }
-  };
 });
