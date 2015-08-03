@@ -4,6 +4,215 @@ angular.module('starter.services', [])
   return {request: $q.defer()};
 })
 
+.factory('rootMethods', function($rootScope, $ionicActionSheet) {
+  $rootScope.vote = function(type, id, vote) {
+    // get either $rootScope.posts or $rootScope.comments
+    types = type+'s';
+    desiredList = $rootScope[types];
+    // create upvote, downvote, and close menu callbacks
+    upVoteFunc = function(i){$rootScope[types][i].upVotes += vote};
+    downVoteFunc = function(i){$rootScope[types][i].downVotes -= vote};
+    if (type == 'comment') {
+      // if voting on a comment, close the comment menu
+      var closeFunc = function(i){$ionicListDelegate.closeOptionButtons()};
+    }
+    else {
+      if ($rootScope.onPosts()) {
+        // if voting on a post from the front page, close the list post menu
+        var closeFunc = function(i){$rootScope.submissions[i].hideMenu = !$rootScope.submissions[i].hideMenu};
+      }
+      else {
+        // if voting on a post from the post's page, close the main post menu
+        var closeFunc = function(i){$rootScope.togglePostMenu()};
+      }
+    }
+    // entity is a alias for post or comment
+    entity = $.grep(desiredList, function(e){return e.id == id})[0];
+    i = desiredList.indexOf(entity);
+    // close the menu
+    closeFunc(i);
+    // vote on the post or comment
+    Voat.vote(type, id, vote).then(function(result) {
+      if (result.data == 'token') {
+        // if not logged in
+        alert('you are not logged in');
+        return;
+      }
+      if (result.data.data.resultName == 'Denied') {
+        // usually errors due to lack of CPP
+        alert(result.data.data.message);
+        return;
+      }
+      else if (vote) {
+        // upvote
+        upVoteFunc(i)
+      }
+      else {
+        // downvote
+        downVoteFunc(i);
+      }
+    });
+  }
+
+  $rootScope.save = function(type, id) {
+    /*
+      save a post or comment
+    */
+    $rootScope.closePostMenu();
+    Voat.save(type, id).then(function(result){
+      if (result.data == 'token') {
+        // if not logged in
+        alert('you are not logged in');
+        return;
+      }
+      alert('saved successfully');
+    })
+  }
+
+  $rootScope.refresh = function() {
+    /*
+      overwrite the list of posts with new posts
+    */
+    if ($rootScope.onPosts()) {
+      // refresh posts if on posts page
+      $rootScope.load_posts($rootScope.load_posts_callback);
+    }
+    else if ($rootScope.onPost()) {
+      // refresh comments if on comments page
+      $rootScope.load_comments($rootScope.focused_post.id);
+    }
+    else {
+      $rootScope.$broadcast('scroll.refreshComplete');
+    }
+  }
+
+  $rootScope.showMenu = function() {
+    /*
+      bring up bottom menu for clicked-on posts,
+      display it by clicking the voat logo at the top.
+    */
+    // don't show the menu if not on a post's comment section
+    if ($rootScope.onPosts()) {
+      var buttons = [
+        {text: 'submit post/link'},
+        {text: 'get recent'},
+        {text: 'get top'}
+      ];
+      var custom_opts = {
+        destructiveText: 'go zen'
+      }
+      var buttonClicked = function(index) {
+        // button clicked callback
+        if (index == 0) {
+          if ($rootScope.loggedIn()) {
+            $rootScope.goToState('forward', 'voat.submission')
+            return true;
+            // go to submission slide
+            $rootScope.goToSubmission();
+          }
+          else {
+            alert('Login to submit')
+          }
+        }
+        else if (index == 1) {
+          $rootScope.showLoading();
+          $rootScope.submissions = undefined;
+          $rootScope.hideLoading();
+        }
+        return true;
+      }
+    }
+    else if ($rootScope.onPost()) {
+      var buttons = [
+        {text: 'view '+$rootScope.focused_post.userName+"'s history"},
+      ];
+      var buttonClicked = function(index) {
+        // button clicked callback
+        if (index == 0) {
+          // if user clicked `User's Profile` button
+          // set focused_user
+          name = $rootScope.focused_post.userName;
+          $rootScope.getUserInfo(name, function(user) {
+            $rootScope.focused_user = user
+          });
+          // go to account slide
+          $rootScope.goToAccount();
+        }
+        return true;
+      }
+    }
+    else {
+      return;
+    }
+    opts = {
+      buttons: buttons,
+      titleText: 'Voat',
+      cancelText: 'cancel',
+      cancel: function() {},
+      buttonClicked: buttonClicked
+    }
+
+    // menu configuration
+    var hidesheet = $ionicActionSheet.show(opts)
+  }
+
+  $rootScope.goToPost = function(post) {
+    /*
+      go to clicked post
+    */
+
+    $rootScope.comments = undefined;
+    if (!post) {
+      post = $rootScope.focused_post
+      if (!post) {
+        alert('no post to fallback on');
+        return;
+      }
+    }
+    try {
+      if (post.formattedContent.startsWith('<img') &&
+          post.formattedContent.endsWith('/>')) {
+            img = $(post.formattedContent);
+            // get width & height of image
+            w = img[0].width;
+            h = img[0].height;
+            // set desired width
+            img.attr('width', '340px');
+            // get desired height
+            ratio = parseFloat(340) / parseFloat(w);
+            img.attr('height', h * ratio+'px');
+            post.formattedContent = img[0].outerHTML;
+          }
+    } catch (err) {
+      console.log(err);
+    }
+    // open comments
+    $rootScope.goToState('forward', 'voat.post');
+    $rootScope.openPostComments(post);
+  }
+
+  $rootScope.goToLink = function(post) {
+    /*
+      if user clicked thumbnail, take them directly to link
+    */
+
+    // MessageContent can either be a link or
+    // the text body of a post
+    // if MessageContent is just a link
+    if (post.url) {
+      // open link in the app browser
+      $cordovaInAppBrowser.open(post.url, '_blank');
+      $rootScope.closePostMenu();
+    }
+    else {
+      // open comments page
+      $rootScope.goToPost(post);
+    }
+  }
+
+  return {}
+})
+
 .factory('Voat', function($http, $rootScope, cancel) {
   //cancel.request.resolve('make way gentlemen');
   var ip = 'https://relurk.com';

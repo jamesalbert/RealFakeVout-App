@@ -70,7 +70,7 @@ angular.module('starter', ['ionic', 'dcbImgFallback', 'starter.controllers', 'st
    androidURL: 'market://details?id=<package_name>',
    windowsURL: 'ms-windows-store:Review?name=<...>'
    */
-   $cordovaAppRateProvider.setPreferences(prefs)
+   //$cordovaAppRateProvider.setPreferences(prefs)
   }, false);
   // Ionic uses AngularUI Router which uses the concept of states
   // Learn more here: https://github.com/angular-ui/ui-router
@@ -102,7 +102,7 @@ angular.module('starter', ['ionic', 'dcbImgFallback', 'starter.controllers', 'st
     views: {
       'voat-post': {
         templateUrl: 'templates/voat-post.html',
-        controller: 'VoatCtrl'
+        controller: 'VoatPostCtrl'
       }
     }
   })
@@ -112,7 +112,7 @@ angular.module('starter', ['ionic', 'dcbImgFallback', 'starter.controllers', 'st
     views: {
       'voat-settings': {
         templateUrl: 'templates/voat-settings.html',
-        controller: 'VoatCtrl'
+        controller: 'VoatSettingsCtrl'
       }
     }
   })
@@ -122,7 +122,7 @@ angular.module('starter', ['ionic', 'dcbImgFallback', 'starter.controllers', 'st
     views: {
       'voat-account': {
         templateUrl: 'templates/voat-account.html',
-        controller: 'VoatCtrl'
+        controller: 'VoatAccountCtrl'
       }
     }
   })
@@ -132,7 +132,7 @@ angular.module('starter', ['ionic', 'dcbImgFallback', 'starter.controllers', 'st
     views: {
       'voat-login': {
         templateUrl: 'templates/voat-login.html',
-        controller: 'VoatCtrl'
+        controller: 'VoatLoginCtrl'
       }
     }
   })
@@ -142,7 +142,7 @@ angular.module('starter', ['ionic', 'dcbImgFallback', 'starter.controllers', 'st
     views: {
       'voat-submission': {
         templateUrl: 'templates/voat-submission.html',
-        controller: 'VoatCtrl'
+        controller: 'VoatSubmissionCtrl'
       }
     }
   });
